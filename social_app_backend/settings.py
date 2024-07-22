@@ -149,13 +149,17 @@ REST_FRAMEWORK = {
 
 
 DJOSER = {
+    'SERIALIZERS': {
+        'user_create_password_retype': 'users.serializers.CustomUserCreatePasswordRetypeSerializer',
+    },
     'PASSWORD_RESET_CONFIRM_URL': 'password-reset/{uid}/{token}',
     'USER_CREATE_PASSWORD_RETYPE': True,
     'PASSWORD_RESET_CONFIRM_RETYPE': True,
     'TOKEN_MODEL': None,
-    # 'SEND_ACTIVATION_EMAIL': True,
-    # 'ACTIVATION_URL': 'activation/{uid}/{token}',
+    'SEND_ACTIVATION_EMAIL': True,
+    'ACTIVATION_URL': 'activation/{uid}/{token}',
     # 'SOCIAL_AUTH_ALLOWED_REDIRECT_URIS': getenv('REDIRECT_URLS').split(','), # in case we want to allow social auth
+    
 }
 
 

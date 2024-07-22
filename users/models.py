@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
 import uuid
+import re
 
 # Create your models here.
 
@@ -8,7 +9,7 @@ class UserAccountManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
         if not email:
             raise ValueError("The email field must be set")
-        
+
 
         email = self.normalize_email(email)
         email = email.lower()
@@ -38,7 +39,7 @@ class UserAccount(AbstractBaseUser, PermissionsMixin):
     email = models.CharField(max_length=255, unique=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
-    is_active = models.BooleanField(default=True)
+    is_active = models.BooleanField(default=False)
 
     is_staff = models.BooleanField(default=False)
     is_superuser = models.BooleanField(default=False)
