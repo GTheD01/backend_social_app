@@ -43,6 +43,7 @@ class CustomTokenRefreshView(TokenRefreshView):
     def post(self, request, *args, **kwargs):
         refresh_token = request.COOKIES.get("refresh")
 
+
         if refresh_token:
             request.data['refresh'] = refresh_token
         
@@ -60,7 +61,6 @@ class CustomTokenRefreshView(TokenRefreshView):
                 httponly=settings.AUTH_COOKIE_HTTP_ONLY, 
                 samesite=settings.AUTH_COOKIE_SAMESITE
             )
-        
 
         return response
     
@@ -71,6 +71,7 @@ class CustomTokenVerifyView(TokenVerifyView):
 
         if access_token:
             request.data['token'] = access_token
+
         
         return super().post(request, *args, **kwargs)
     
