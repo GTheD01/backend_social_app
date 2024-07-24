@@ -113,6 +113,9 @@ AWS_SES_REGION_ENDPOINT = f'email.{AWS_SES_REGION_NAME}.amazonaws.com'
 AWS_SES_FROM_EMAIL = getenv('AWS_SES_FROM_EMAIL')
 USE_SES_V2 = True
 
+DOMAIN = getenv('DOMAIN')
+SITE_NAME = "Socializing Backend"
+
 
 # Password validation
 # https://docs.djangoproject.com/en/4.1/ref/settings/#auth-password-validators
