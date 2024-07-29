@@ -80,7 +80,27 @@ class LogoutView(APIView):
     def post(self, request, *args, **kwargs):
         response = Response(status=status.HTTP_204_NO_CONTENT)
 
-        response.delete_cookie(key='access', samesite=None)
-        response.delete_cookie(key='refresh', samesite=None)
+
+        response.set_cookie(
+                'access', 
+                '', 
+                max_age=0, 
+                expires='Thu, 01 Jan 1970 00:00:00 GMT',
+                path=settings.AUTH_COOKIE_PATH,
+                secure=settings.AUTH_COOKIE_SECURE, 
+                httponly=settings.AUTH_COOKIE_HTTP_ONLY, 
+                samesite=settings.AUTH_COOKIE_SAMESITE
+            )
+        
+        response.set_cookie(
+            'refresh', 
+            '', 
+            max_age=0, 
+            expires='Thu, 01 Jan 1970 00:00:00 GMT',
+            path=settings.AUTH_COOKIE_PATH, 
+            secure=settings.AUTH_COOKIE_SECURE, 
+            httponly=settings.AUTH_COOKIE_HTTP_ONLY, 
+            samesite=settings.AUTH_COOKIE_SAMESITE
+        )
 
         return response
