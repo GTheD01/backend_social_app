@@ -19,9 +19,11 @@ import dotenv
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+WEBSITE_URL = 'http://127.0.0.1:8000'
 
 dotenv_file = BASE_DIR / '.env.local'
 
+DOMAIN = getenv("DOMAIN", "127.0.0.1:3000")
 
 if path.isfile(dotenv_file):
     dotenv.read_dotenv(dotenv_file)
@@ -55,6 +57,7 @@ INSTALLED_APPS = [
     'djoser',
 
     'users',
+    'post',
 ]
 
 MIDDLEWARE = [
@@ -154,6 +157,7 @@ REST_FRAMEWORK = {
 DJOSER = {
     'SERIALIZERS': {
         'user_create_password_retype': 'users.serializers.CustomUserCreatePasswordRetypeSerializer',
+        'current_user': 'users.serializers.UserSerializer',
     },
     'PASSWORD_RESET_CONFIRM_URL': 'password-reset/{uid}/{token}',
     'USER_CREATE_PASSWORD_RETYPE': True,

@@ -1,9 +1,14 @@
 from django.conf import settings
 
+from django.db.models import Q
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView, TokenVerifyView
+
+from .serializers import UserSerializer
+from users.models import UserAccount
+from .forms import ProfileForm
 
 # Create your views here.
 
@@ -104,3 +109,28 @@ class LogoutView(APIView):
         )
 
         return response
+
+
+class EditProfileView(APIView):
+    def post(self, request):
+        user = request.user
+        email = request.data.get('email')
+        username = request.data.get('username')
+
+        if UserAccount.objects.exclude(id=user.id).filter(Q(email=email ) | Q(username=username)).exists():
+            return Response({'message':"email or username already exists"})
+        else:
+            if request.FILES and user.avatar:
+                user.avatar.delete()
+
+            form = ProfileForm(request.POST, request.FILES, instance=user)
+
+            if form.is_valid():
+                print("the form is valid")
+                form.save()
+            
+            serializer = UserSerializer(user)
+
+            return Response({'message': 'information updated', 'user':serializer.data})
+
+        
