@@ -1,7 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
 import uuid
-import re
+from django.conf import settings
+
 
 # Create your models here.
 
@@ -32,12 +33,20 @@ class UserAccountManager(BaseUserManager):
         return user
 
 
+def avatar_upload_to(instance, filename):
+    return f"avatars/{instance.username}/{filename}"
+
 class UserAccount(AbstractBaseUser, PermissionsMixin):
+    
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, unique=True)
-    first_name = models.CharField(max_length=255)
-    last_name = models.CharField(max_length=255)
+    username = models.CharField(max_length=255, unique=True)
+    full_name = models.CharField(max_length=255)
     email = models.CharField(max_length=255, unique=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    avatar = models.ImageField(upload_to=avatar_upload_to, blank=True, null=True)
+
+    posts_count = models.IntegerField(default=0)
 
     is_active = models.BooleanField(default=False)
 
@@ -47,7 +56,15 @@ class UserAccount(AbstractBaseUser, PermissionsMixin):
     objects = UserAccountManager()
 
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS= ['first_name', 'last_name']
+    REQUIRED_FIELDS= ['username', 'full_name']
 
     def __str__(self) -> str:
         return self.email
+
+    def get_avatar(self):
+        if (self.avatar):
+            return settings.WEBSITE_URL +  self.avatar.url
+        else: 
+            return ""
+    
+    
