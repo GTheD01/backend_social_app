@@ -18,6 +18,28 @@ def post_list(request):
 
     return Response(serializer.data)
 
+
+@api_view(['GET'])
+def post_detail(request, id):
+    user = request.user
+
+    post = Post.objects.filter(created_by=user.id).get(pk=id)
+
+    serializer = PostSerialzier(post)
+
+    return Response(serializer.data)
+
+
+@api_view(['DELETE'])
+def post_delete(request, id):
+    user = request.user
+
+    post = Post.objects.filter(created_by=user).get(pk=id)
+
+    post.delete()
+
+    return Response({'message': "Post deleted"})
+
 @api_view(['POST'])
 def create_post(request):
     form = PostForm(request.POST)
@@ -37,3 +59,4 @@ def create_post(request):
         return Response(serializer.data)
     else:
         return Response({'error': "Failed to create post"})
+    

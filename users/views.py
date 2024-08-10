@@ -133,4 +133,4 @@ class EditProfileView(APIView):
 
             return Response({'message': 'information updated', 'user':serializer.data})
 
-        
+
