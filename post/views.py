@@ -1,7 +1,8 @@
+import os
 from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from rest_framework.response import Response
 
-from post.models import Post, PostAttachment
+from post.models import Post, PostAttachment, Like
 
 from .forms import PostForm, AttachmentForm
 from .serializers import PostSerializer, PostAttachmentSerializer
@@ -10,13 +11,11 @@ from .serializers import PostSerializer, PostAttachmentSerializer
 
 @api_view(["GET"])
 def post_list(request):
-    user = request.user
+    posts = Post.objects.all()
 
-    posts = Post.objects.filter(created_by=user.id)
+    serializer = PostSerializer(posts, many=True, context={'request':request})
 
-    serializer = PostSerializer(posts, many=True)
-
-    return Response(serializer.data)
+    return Response(serializer.data,)
 
 
 @api_view(['GET'])
@@ -35,6 +34,21 @@ def post_delete(request, id):
     user = request.user
 
     post = Post.objects.filter(created_by=user).get(pk=id)
+    if post.attachments:
+        for attachment in post.attachments.all():
+            file_path = attachment.image.path # getting file path(not needed in production since we store images elsewhere)
+            attachment.delete()
+
+            # Deleting uploaded files (not needed this in production)
+            if os.path.isfile(file_path):
+                os.remove(file_path)
+    
+    # Using this approach because ManyToManyField cannot have on_delete=CASCADE
+    # Another approach will be to create separate model that connects like model and post model through that separate model with ForeignKeys
+    if post.likes:
+        for like in post.likes.all():
+            like.delete()
+
     post.delete()
 
     # WORKS
@@ -48,7 +62,6 @@ def create_post(request):
     form = PostForm(request.POST, request.FILES)
     attachment = None
     attachment_form = AttachmentForm(request.POST, request.FILES)
-    print(attachment_form)
 
     if attachment_form.is_valid():
         attachment = attachment_form.save(commit=False)
@@ -74,3 +87,23 @@ def create_post(request):
     else:
         return Response({'error': "Failed to create post"})
     
+
+@api_view(['POST'])
+def like_post(request, id):
+    post = Post.objects.get(pk=id)
+
+    if not post.likes.filter(created_by=request.user):
+        like = Like.objects.create(created_by=request.user)
+
+        post.likes_count = post.likes_count + 1
+        post.likes.add(like)
+        post.save()
+
+        return Response({'message': "liked"})
+    else:
+        like = Like.objects.get(created_by=request.user)
+        post.likes_count = post.likes_count - 1
+        post.likes.remove(like)
+        like.delete()
+        post.save()
+        return Response({'message': "like removed"})
