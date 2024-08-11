@@ -155,9 +155,14 @@ REST_FRAMEWORK = {
 
 
 DJOSER = {
+    'HIDE_USERS':False,
+    'PERMISSIONS': {
+        'user_list': ['rest_framework.permissions.IsAuthenticated']
+    },
     'SERIALIZERS': {
         'user_create_password_retype': 'users.serializers.CustomUserCreatePasswordRetypeSerializer',
         'current_user': 'users.serializers.UserSerializer',
+        'user': 'users.serializers.UserSerializer'
     },
     'PASSWORD_RESET_CONFIRM_URL': 'password-reset/{uid}/{token}',
     'USER_CREATE_PASSWORD_RETYPE': True,

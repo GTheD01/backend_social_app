@@ -25,6 +25,9 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserAccount
 
-        fields = ('id', 'username', 'email', 'get_avatar', 'full_name')
+        fields = ('id', 'username', 'email', 'get_avatar', 'full_name', 'posts_count', 'followers_count', 'following_count')
 
-
+        def to_representation(self, instance):
+            if instance.is_active:
+                return super().to_representation(instance)
+            return None

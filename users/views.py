@@ -1,3 +1,4 @@
+import logging
 from django.conf import settings
 
 from django.db.models import Q
@@ -5,6 +6,7 @@ from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView, TokenVerifyView
+from djoser.views import UserViewSet
 
 from .serializers import UserSerializer
 from users.models import UserAccount
@@ -111,6 +113,15 @@ class LogoutView(APIView):
         return response
 
 
+class CustomUserViewSet(UserViewSet):
+    queryset = UserAccount.objects.filter(is_active=True)
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+
+        return queryset
+
+
 class EditProfileView(APIView):
     def post(self, request):
         user = request.user
@@ -132,5 +143,4 @@ class EditProfileView(APIView):
             serializer = UserSerializer(user)
 
             return Response({'message': 'information updated', 'user':serializer.data})
-
 

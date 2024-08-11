@@ -35,8 +35,11 @@ def post_delete(request, id):
     user = request.user
 
     post = Post.objects.filter(created_by=user).get(pk=id)
-
     post.delete()
+
+    # WORKS
+    user.posts_count = user.posts_count - 1
+    user.save()
 
     return Response({'message': "Post deleted"})
 

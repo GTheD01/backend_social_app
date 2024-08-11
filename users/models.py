@@ -43,6 +43,11 @@ class UserAccount(AbstractBaseUser, PermissionsMixin):
     full_name = models.CharField(max_length=255)
     email = models.CharField(max_length=255, unique=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    followers = models.ManyToManyField('self', blank=True)
+    following = models.ManyToManyField('self', blank=True)
+
+    followers_count = models.IntegerField(default=0)
+    following_count = models.IntegerField(default=0)
 
     avatar = models.ImageField(upload_to=avatar_upload_to, blank=True, null=True)
 

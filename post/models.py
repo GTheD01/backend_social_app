@@ -13,7 +13,7 @@ class PostAttachment(models.Model):
 
 class Post(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, unique=True)
-    body = models.TextField(blank=True, null=True)
+    body = models.TextField()
     created_by = models.ForeignKey(UserAccount, related_name='posts',on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
 
