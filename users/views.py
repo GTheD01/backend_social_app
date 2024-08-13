@@ -1,4 +1,4 @@
-import logging
+
 from django.conf import settings
 
 from django.db.models import Q
@@ -6,6 +6,7 @@ from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView, TokenVerifyView
+from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from djoser.views import UserViewSet
 
 from .serializers import UserSerializer
@@ -143,4 +144,12 @@ class EditProfileView(APIView):
             serializer = UserSerializer(user)
 
             return Response({'message': 'information updated', 'user':serializer.data})
+
+
+@api_view(['GET'])
+def user_details(request, username):
+    user = UserAccount.objects.get(username=username)
+    serializer = UserSerializer(user)
+
+    return Response(serializer.data)
 

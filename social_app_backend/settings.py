@@ -161,7 +161,7 @@ DJOSER = {
     },
     'SERIALIZERS': {
         'user_create_password_retype': 'users.serializers.CustomUserCreatePasswordRetypeSerializer',
-        'current_user': 'users.serializers.UserSerializer',
+        'current_user': 'users.serializers.UserDetailSerializer',
         'user': 'users.serializers.UserSerializer'
     },
     'PASSWORD_RESET_CONFIRM_URL': 'password-reset/{uid}/{token}',

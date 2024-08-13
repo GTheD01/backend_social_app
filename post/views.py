@@ -110,3 +110,25 @@ def like_post(request, id):
         like.delete()
         post.save()
         return Response({'message': "like removed"})
+
+
+@api_view(['POST'])
+def save_post(request, id):
+    post = Post.objects.get(pk=id)
+    user = request.user
+    if not user.saved_posts.filter(pk=post.id).exists():
+        user.saved_posts.add(post)
+        return Response({'message': "Post saved"})
+    else:
+        user.saved_posts.remove(post)
+        return Response({'message': "Post unsaved"})
+    
+
+@api_view(['GET'])
+def saved_posts(request):
+    user = request.user
+    print(user)
+    saved_posts_list = user.saved_posts.filter(pk=user.id)
+
+    serializer = PostSerializer(saved_posts_list, many=True, context={'request': request})
+    return Response(serializer.data)

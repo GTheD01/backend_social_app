@@ -1,7 +1,9 @@
+import uuid
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
-import uuid
 from django.conf import settings
+
+# from post.models import Post
 
 
 # Create your models here.
@@ -45,6 +47,8 @@ class UserAccount(AbstractBaseUser, PermissionsMixin):
     created_at = models.DateTimeField(auto_now_add=True)
     followers = models.ManyToManyField('self', blank=True)
     following = models.ManyToManyField('self', blank=True)
+
+    saved_posts = models.ManyToManyField('post.Post', blank=True)
 
     followers_count = models.IntegerField(default=0)
     following_count = models.IntegerField(default=0)

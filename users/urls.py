@@ -7,6 +7,7 @@ from .views import (
     LogoutView,
     EditProfileView,
     CustomUserViewSet,
+    user_details
 )
 
 
@@ -17,5 +18,6 @@ urlpatterns = [
     path('jwt/verify/', CustomTokenVerifyView.as_view()),
     path('logout/', LogoutView.as_view()),
     path('profile/edit/', EditProfileView.as_view()),
-    path('users/', CustomUserViewSet.as_view({'get':'list'}), name='user-list')
+    path('users/', CustomUserViewSet.as_view({'get':'list'}), name='user-list'),
+    path('profile/details/<str:username>/', user_details, name="user_details")
 ]
