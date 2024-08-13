@@ -20,11 +20,12 @@ def post_list(request):
 
 @api_view(['GET'])
 def post_detail(request, id):
-    user = request.user
+    try:
+        post = Post.objects.get(pk=id)
 
-    post = Post.objects.filter(created_by=user.id).get(pk=id)
-
-    serializer = PostSerializer(post)
+        serializer = PostSerializer(post, context={'request': request})
+    except:
+        return Response({'error': "Post not found"})
 
     return Response(serializer.data)
 
@@ -33,7 +34,7 @@ def post_detail(request, id):
 def post_delete(request, id):
     user = request.user
 
-    post = Post.objects.filter(created_by=user).get(pk=id)
+    post = Post.objects.filter(created_by=user.id).get(pk=id)
     if post.attachments:
         for attachment in post.attachments.all():
             file_path = attachment.image.path # getting file path(not needed in production since we store images elsewhere)
@@ -48,6 +49,7 @@ def post_delete(request, id):
     if post.likes:
         for like in post.likes.all():
             like.delete()
+
 
     post.delete()
 
@@ -101,7 +103,8 @@ def like_post(request, id):
 
         return Response({'message': "liked"})
     else:
-        like = Like.objects.get(created_by=request.user)
+        like = post.likes.get(created_by=request.user)
+        print(like)
         post.likes_count = post.likes_count - 1
         post.likes.remove(like)
         like.delete()
