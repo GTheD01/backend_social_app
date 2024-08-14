@@ -19,10 +19,11 @@ class PostSerializer(serializers.ModelSerializer):
     attachments = PostAttachmentSerializer(read_only=True, many=True)
     user_liked = serializers.SerializerMethodField()
     post_saved = serializers.SerializerMethodField()
+    post_owner = serializers.SerializerMethodField()
 
     class Meta:
         model = Post
-        fields = ('id', 'body','created_by', 'created_at_formatted', 'attachments', 'likes_count', 'user_liked', 'post_saved')
+        fields = ('id', 'body','created_by', 'created_at_formatted', 'attachments', 'likes_count', 'user_liked', 'post_saved', 'post_owner')
     
     def get_user_liked(self, obj):
         if self.context:
@@ -35,3 +36,9 @@ class PostSerializer(serializers.ModelSerializer):
             req = self.context['request']
             user = req.user
             return user.saved_posts.filter(pk=obj.id).exists()
+    
+    def get_post_owner(self, obj):
+        if self.context:
+            req = self.context['request']
+            user = req.user
+            return obj.created_by == user
