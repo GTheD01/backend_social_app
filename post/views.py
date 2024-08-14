@@ -1,11 +1,14 @@
 import os
 from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from rest_framework.response import Response
+from rest_framework import status
 
-from post.models import Post, PostAttachment, Like
+from post.models import Post, Like
+from users.models import UserAccount
+from django.db.models import Q
 
 from .forms import PostForm, AttachmentForm
-from .serializers import PostSerializer, PostAttachmentSerializer
+from .serializers import PostSerializer
 # Create your views here.
 
 
@@ -16,6 +19,16 @@ def post_list(request):
     serializer = PostSerializer(posts, many=True, context={'request':request})
 
     return Response(serializer.data,)
+
+
+@api_view(['GET'])
+def post_list_profile(request, username):
+    user = UserAccount.objects.get(username=username)
+    posts = Post.objects.filter(created_by=user.id)
+
+    serializer = PostSerializer(posts, many=True, context={"request": request})
+
+    return Response(serializer.data)
 
 
 @api_view(['GET'])
@@ -125,10 +138,14 @@ def save_post(request, id):
     
 
 @api_view(['GET'])
-def saved_posts(request):
+def saved_posts(request, username):
     user = request.user
-    print(user)
-    saved_posts_list = user.saved_posts.filter(pk=user.id)
+    curr_user = UserAccount.objects.get(username=username)
 
-    serializer = PostSerializer(saved_posts_list, many=True, context={'request': request})
-    return Response(serializer.data)
+    if user == curr_user:
+        saved_posts_list = user.saved_posts
+        serializer = PostSerializer(saved_posts_list, many=True, context={'request': request})
+
+        return Response(serializer.data)
+    else: 
+        return Response(status=status.HTTP_403_FORBIDDEN)
