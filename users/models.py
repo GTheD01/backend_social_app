@@ -74,6 +74,6 @@ class UserAccount(AbstractBaseUser, PermissionsMixin):
         if (self.avatar):
             return settings.WEBSITE_URL +  self.avatar.url
         else: 
-            return ""
+            return settings.WEBSITE_URL + settings.DEFAULT_USER_IMAGE_PATH
     
     

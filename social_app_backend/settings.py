@@ -20,6 +20,7 @@ import dotenv
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 WEBSITE_URL = 'http://127.0.0.1:8000'
+DEFAULT_USER_IMAGE_PATH = "/media/avatars/default/default-user-image.jpg"
 
 dotenv_file = BASE_DIR / '.env.local'
 
