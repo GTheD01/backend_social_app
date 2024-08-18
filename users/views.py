@@ -153,3 +153,15 @@ def user_details(request, username):
 
     return Response(serializer.data)
 
+
+@api_view(["GET"])
+def search_users(request):
+    slug = request.GET.get('search', '')
+    if slug:
+        users = UserAccount.objects.filter(is_active=True, username__icontains=slug)
+
+        serializer = UserSerializer(users, many=True)
+
+        return Response(serializer.data)
+
+    return Response(status=status.HTTP_204_NO_CONTENT)
