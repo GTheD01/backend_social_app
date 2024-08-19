@@ -24,26 +24,37 @@ class CustomUserCreatePasswordRetypeSerializer(UserCreatePasswordRetypeSerialize
             self.fail("email_mismatch")
 
 class UserSerializer(serializers.ModelSerializer):
+    user_follows = serializers.SerializerMethodField()
 
     class Meta:
         model = UserAccount
-        fields = ('id', 'username', 'email', 'get_avatar', 'full_name', 'posts_count', 'followers_count', 'following_count',)
+        fields = ('id', 'username', 'email', 'get_avatar', 'full_name', 'posts_count', 'followers_count', 'following_count', 'user_follows')
 
     def to_representation(self, instance):
         if instance.is_active:
             return super().to_representation(instance)
         return None
         
-    
+    def get_user_follows(self, obj):
+        if 'request' in self.context:
+            req = self.context['request']
+            user = req.user
+
+            return obj.followers.contains(user)
+        return False
 
 class UserDetailSerializer(serializers.ModelSerializer):
     saved_posts = serializers.SerializerMethodField()
+    
+
     class Meta:
         model = UserAccount
-        fields = fields = ('id', 'username', 'email', 'get_avatar', 'full_name', 'posts_count', 'followers_count', 'following_count', 'saved_posts')
+        fields = fields = ('id', 'username', 'email', 'get_avatar', 'full_name', 'posts_count', 'followers_count', 'following_count', 'saved_posts',)
 
     def get_saved_posts(self, obj):
         from post.serializers import PostSerializer
         saved_posts = obj.saved_posts.all()
         return PostSerializer(saved_posts, many=True).data
     
+    
+

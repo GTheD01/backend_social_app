@@ -116,12 +116,14 @@ class LogoutView(APIView):
 
 class CustomUserViewSet(UserViewSet):
     queryset = UserAccount.objects.filter(is_active=True)
+    serializer_class = UserSerializer
+
 
     def get_queryset(self):
         queryset = super().get_queryset()
 
         return queryset
-
+    
 
 class EditProfileView(APIView):
     def post(self, request):
@@ -149,7 +151,7 @@ class EditProfileView(APIView):
 @api_view(['GET'])
 def user_details(request, username):
     user = UserAccount.objects.get(username=username)
-    serializer = UserSerializer(user)
+    serializer = UserSerializer(user,  context={"request": request})
 
     return Response(serializer.data)
 
@@ -158,10 +160,34 @@ def user_details(request, username):
 def search_users(request):
     slug = request.GET.get('search', '')
     if slug:
-        users = UserAccount.objects.filter(is_active=True, username__icontains=slug)
+        users = UserAccount.objects.filter(is_active=True, username__icontains=slug).exclude(id=request.user.id)
 
-        serializer = UserSerializer(users, many=True)
+        serializer = UserSerializer(users, many=True, context={"request": request})
 
         return Response(serializer.data)
 
     return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@api_view(['POST'])
+def follow_user(request, username):
+    user = request.user
+    user_to_follow = UserAccount.objects.get(username=username)
+
+    if not user.following.contains(user_to_follow) and user.id != user_to_follow.id:
+        user.following.add(user_to_follow)
+        user.following_count = user.following_count + 1
+        user_to_follow.followers.add(user)
+        user_to_follow.followers_count = user_to_follow.followers_count + 1
+        user.save()
+        user_to_follow.save()
+
+        return Response({'message': "User followed"})
+    else:
+        user.following.remove(user_to_follow)
+        user.following_count = user.following_count - 1
+        user_to_follow.followers.remove(user)
+        user_to_follow.followers_count = user_to_follow.followers_count - 1
+        user.save()
+        user_to_follow.save()
+        return Response({"message": "User unfollowed"})

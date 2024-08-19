@@ -14,7 +14,11 @@ from .serializers import PostSerializer
 
 @api_view(["GET"])
 def post_list(request):
-    posts = Post.objects.all()
+    user = request.user
+    users =[user]
+    for u in user.following.all():
+        users.append(u)
+    posts = Post.objects.filter(created_by__in=users)
 
     serializer = PostSerializer(posts, many=True, context={'request':request})
 

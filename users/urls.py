@@ -8,7 +8,8 @@ from .views import (
     EditProfileView,
     CustomUserViewSet,
     user_details,
-    search_users
+    search_users,
+    follow_user
 )
 
 
@@ -21,5 +22,6 @@ urlpatterns = [
     path('profile/edit/', EditProfileView.as_view()),
     path('users/', CustomUserViewSet.as_view({'get':'list'}), name='user-list'),
     path('users/search', search_users, name="search_users"),
+    path('user/follow/<str:username>/', follow_user, name="follow_user"),
     path('profile/details/<str:username>/', user_details, name="user_details")
 ]
