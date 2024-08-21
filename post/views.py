@@ -79,6 +79,7 @@ def post_delete(request, id):
 @api_view(['POST'])
 def create_post(request):
     form = PostForm(request.POST, request.FILES)
+
     attachment = None
     attachment_form = AttachmentForm(request.POST, request.FILES)
 
@@ -87,7 +88,7 @@ def create_post(request):
         attachment.created_by = request.user
         attachment.save()
     
-    
+
     if form.is_valid():
         post = form.save(commit=False)
         post.created_by = request.user
@@ -103,8 +104,20 @@ def create_post(request):
         serializer = PostSerializer(post)
 
         return Response(serializer.data)
+    elif attachment:
+        post = Post.objects.create(created_by=request.user, body="")
+        post.save()
+        post.attachments.add(attachment)
+
+        user = request.user
+        user.posts_count = user.posts_count + 1
+        user.save()
+
+        serializer = PostSerializer(post)
+        
+        return Response(serializer.data)
     else:
-        return Response({'error': "Failed to create post"})
+        return Response({'error': "Body text or image attachment required."}, status=status.HTTP_400_BAD_REQUEST)
     
 
 @api_view(['POST'])

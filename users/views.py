@@ -140,7 +140,6 @@ class EditProfileView(APIView):
             form = ProfileForm(request.POST, request.FILES, instance=user)
 
             if form.is_valid():
-                print("the form is valid")
                 form.save()
             
             serializer = UserSerializer(user)

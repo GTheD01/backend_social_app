@@ -1,7 +1,8 @@
 import uuid
+from django.conf import settings
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
-from django.conf import settings
+from PIL import Image
 
 # from post.models import Post
 
@@ -76,4 +77,14 @@ class UserAccount(AbstractBaseUser, PermissionsMixin):
         else: 
             return settings.WEBSITE_URL + settings.DEFAULT_USER_IMAGE_PATH
     
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+
+        if self.avatar:
+            img = Image.open(self.avatar.path)
+            if img.height > 100 or img.width > 100:
+                size = (100, 100)
+                img.thumbnail(size)
+                img.save(self.avatar.path)
     
