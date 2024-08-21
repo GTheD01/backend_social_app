@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import post_list, create_post, post_detail, post_delete, like_post, save_post, saved_posts, post_list_profile
+from .views import post_list, create_post, post_detail, post_delete, like_post, save_post, saved_posts, post_list_profile, comment_post, delete_comment
 
 urlpatterns = [
     path("", post_list, name='post_list'),
@@ -8,6 +8,8 @@ urlpatterns = [
     path("delete/<uuid:id>/", post_delete),
     path("create/", create_post, name='post_list'),
     path("like/<uuid:id>/", like_post, name="post_like"),
+    path("comment/<uuid:id>/", comment_post, name="post_comment"),
+    path("<uuid:postId>/comment/delete/<uuid:commentId>/", delete_comment, name="comment_delete"),
     path("save/<uuid:id>/", save_post, name="post_save"),
     path('saved/<str:username>/', saved_posts, name='saved_posts')
 ]

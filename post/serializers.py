@@ -1,13 +1,30 @@
 from rest_framework import serializers
 
-from .models import Post, PostAttachment, Like
+from .models import Post, PostAttachment, Like, Comment
 from users.serializers import UserSerializer
 
 class LikeSerializer(serializers.ModelSerializer):
     created_by = UserSerializer(read_only=True)
+
     class Meta:
         model = Like
         fields = ('created_by')
+
+
+class CommentSerializer(serializers.ModelSerializer):
+    created_by = UserSerializer(read_only=True)
+    comment_owner = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Comment
+        fields = ('id', 'body', 'created_by', 'created_at_formatted', 'comment_owner')
+
+    def get_comment_owner(self, obj):
+        if self.context:
+            req = self.context['request']
+            user = req.user
+            return obj.created_by.id == user.id
+
 
 class PostAttachmentSerializer(serializers.ModelSerializer):
     class Meta:
@@ -17,13 +34,14 @@ class PostAttachmentSerializer(serializers.ModelSerializer):
 class PostSerializer(serializers.ModelSerializer):
     created_by = UserSerializer(read_only=True)
     attachments = PostAttachmentSerializer(read_only=True, many=True)
+    comments = CommentSerializer(read_only=True, many=True)
     user_liked = serializers.SerializerMethodField()
     post_saved = serializers.SerializerMethodField()
     post_owner = serializers.SerializerMethodField()
 
     class Meta:
         model = Post
-        fields = ('id', 'body','created_by', 'created_at_formatted', 'attachments', 'likes_count', 'user_liked', 'post_saved', 'post_owner')
+        fields = ('id', 'body','created_by', 'created_at_formatted', 'attachments', 'likes_count', 'user_liked', 'post_saved', 'post_owner', 'comments', 'comments_count')
     
     def get_user_liked(self, obj):
         if self.context:

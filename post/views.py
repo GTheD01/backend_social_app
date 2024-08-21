@@ -3,12 +3,12 @@ from rest_framework.decorators import api_view, permission_classes, authenticati
 from rest_framework.response import Response
 from rest_framework import status
 
-from post.models import Post, Like
+from post.models import Post, Like, Comment
 from users.models import UserAccount
 from django.db.models import Q
 
 from .forms import PostForm, AttachmentForm
-from .serializers import PostSerializer
+from .serializers import PostSerializer, CommentSerializer
 # Create your views here.
 
 
@@ -127,6 +127,41 @@ def like_post(request, id):
         like.delete()
         post.save()
         return Response({'message': "like removed"})
+    
+
+@api_view(['POST'])
+def comment_post(request, id):
+    body = request.data.get("body")
+    if not body:
+        return Response({"error": "Body text required"}, status=status.HTTP_400_BAD_REQUEST)
+    comment = Comment.objects.create(body=body, created_by=request.user)
+
+    post = Post.objects.get(pk=id)
+    post.comments.add(comment)
+    post.comments_count = post.comments_count + 1
+    post.save()
+
+    serializer = CommentSerializer(comment, context={"request":request})
+
+    return Response(serializer.data)
+
+
+@api_view(['POST'])
+def delete_comment(request, postId, commentId):
+    post = Post.objects.get(pk=postId)
+    
+
+    if post.created_by == request.user:
+        comment = Comment.objects.get(pk=commentId)
+    else:
+        comment = Comment.objects.get(created_by=request.user, pk=commentId)
+
+    post.comments_count = post.comments_count - 1
+    post.comments.remove(comment)
+    comment.delete()
+    post.save()
+
+    return Response({"message": "Comment deleted"})
 
 
 @api_view(['POST'])
