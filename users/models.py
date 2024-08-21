@@ -46,8 +46,8 @@ class UserAccount(AbstractBaseUser, PermissionsMixin):
     full_name = models.CharField(max_length=255)
     email = models.CharField(max_length=255, unique=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    followers = models.ManyToManyField('self', blank=True)
-    following = models.ManyToManyField('self', blank=True)
+    followers = models.ManyToManyField('self', blank=True, symmetrical=False, related_name="followers_set")
+    following = models.ManyToManyField('self', blank=True, symmetrical=False, related_name="following_set")
 
     saved_posts = models.ManyToManyField('post.Post', blank=True)
 
