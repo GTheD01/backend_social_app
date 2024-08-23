@@ -39,7 +39,7 @@ class UserSerializer(serializers.ModelSerializer):
         if 'request' in self.context:
             req = self.context['request']
             user = req.user
-            print(user.following.all())
+
 
             return user.following.contains(obj)
         return False

@@ -9,6 +9,7 @@ from django.db.models import Q
 
 from .forms import PostForm, AttachmentForm
 from .serializers import PostSerializer, CommentSerializer
+from .paginations import PostCursorPagination
 # Create your views here.
 
 
@@ -20,9 +21,13 @@ def post_list(request):
         users.append(u)
     posts = Post.objects.filter(created_by__in=users)
 
-    serializer = PostSerializer(posts, many=True, context={'request':request})
+    paginator = PostCursorPagination()
 
-    return Response(serializer.data,)
+    result_page = paginator.paginate_queryset(posts, request)
+
+    serializer = PostSerializer(result_page, many=True, context={'request':request})
+
+    return paginator.get_paginated_response(serializer.data)
 
 
 @api_view(['GET'])
@@ -134,7 +139,6 @@ def like_post(request, id):
         return Response({'message': "liked"})
     else:
         like = post.likes.get(created_by=request.user)
-        print(like)
         post.likes_count = post.likes_count - 1
         post.likes.remove(like)
         like.delete()
