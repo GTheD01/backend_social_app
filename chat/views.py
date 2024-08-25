@@ -29,7 +29,14 @@ def get_or_create_conversation(request, user_id):
 @api_view(['GET'])
 def conversation_details(request, conversation_id):
     conversation = Conversation.objects.filter(users__in=[request.user]).get(pk=conversation_id)
+    for message in conversation.messages.exclude(created_by=request.user.id):
+        if not message.seen:
+            message.seen = True
+            message.save()
+
     serializer = ConversationDetailSerializer(conversation)
+
+
 
     return Response(serializer.data)
 
@@ -59,6 +66,7 @@ def send_message(request, conversation_id):
 def conversation_list(request):
     conversations = Conversation.objects.filter(users__in=[request.user])
     serializer = ConversationSerializer(conversations, many=True, context={"request":request})
+
 
     return Response(serializer.data)
 
