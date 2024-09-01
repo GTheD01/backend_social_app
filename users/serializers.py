@@ -18,7 +18,8 @@ class CustomUserCreatePasswordRetypeSerializer(UserCreatePasswordRetypeSerialize
     
     def validate(self, data):
         email = data.get('email')
-        if is_valid_email_regex.fullmatch(email):
+
+        if is_valid_email_regex.fullmatch(email.lower()):
             return super().validate(data)
         else:
             self.fail("email_mismatch")
