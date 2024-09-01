@@ -1,11 +1,13 @@
 import os
-from rest_framework.decorators import api_view, permission_classes, authentication_classes
+from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 
 from post.models import Post, Like, Comment
 from users.models import UserAccount
 from django.db.models import Q
+
+from notifications.utilities import create_notification
 
 from .forms import PostForm, AttachmentForm
 from .serializers import PostSerializer, CommentSerializer
@@ -106,7 +108,7 @@ def create_post(request):
         user.posts_count = user.posts_count + 1
         user.save()
 
-        serializer = PostSerializer(post)
+        serializer = PostSerializer(post, context={'request':request})
 
         return Response(serializer.data)
     elif attachment:
@@ -136,14 +138,20 @@ def like_post(request, id):
         post.likes.add(like)
         post.save()
 
-        return Response({'message': "liked"})
+        serializer = PostSerializer(post, context={"request":request})
+
+        if post.created_by != request.user:
+            notification = create_notification(request, 'post_liked', post_id=id)
+
+        return Response(serializer.data)
     else:
         like = post.likes.get(created_by=request.user)
         post.likes_count = post.likes_count - 1
         post.likes.remove(like)
         like.delete()
         post.save()
-        return Response({'message': "like removed"})
+        serializer = PostSerializer(post, context={"request":request})
+        return Response(serializer.data)
     
 
 @api_view(['POST'])
@@ -157,6 +165,9 @@ def comment_post(request, id):
     post.comments.add(comment)
     post.comments_count = post.comments_count + 1
     post.save()
+
+    if post.created_by != request.user:
+        notification = create_notification(request, 'post_commented', post_id=id)
 
     serializer = CommentSerializer(comment, context={"request":request})
 
@@ -187,10 +198,12 @@ def save_post(request, id):
     user = request.user
     if not user.saved_posts.filter(pk=post.id).exists():
         user.saved_posts.add(post)
-        return Response({'message': "Post saved"})
+
     else:
         user.saved_posts.remove(post)
-        return Response({'message': "Post unsaved"})
+    serializer = PostSerializer(post, context={'request':request})
+    return Response(serializer.data)
+
     
 
 @api_view(['GET'])

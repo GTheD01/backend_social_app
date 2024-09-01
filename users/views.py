@@ -9,6 +9,8 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from djoser.views import UserViewSet
 
+from notifications.utilities import create_notification
+
 from .serializers import UserSerializer
 from users.models import UserAccount
 from .forms import ProfileForm
@@ -180,6 +182,7 @@ def follow_user(request, username):
         user_to_follow.followers_count = user_to_follow.followers_count + 1
         user.save()
         user_to_follow.save()
+        notification = create_notification(request, 'new_follower', username=username)
 
         return Response({'message': "User followed"})
     else:

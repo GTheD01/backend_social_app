@@ -46,16 +46,20 @@ class UserSerializer(serializers.ModelSerializer):
 
 class UserDetailSerializer(serializers.ModelSerializer):
     saved_posts = serializers.SerializerMethodField()
-    
+    notifications_count = serializers.SerializerMethodField()
 
     class Meta:
         model = UserAccount
-        fields = fields = ('id', 'username', 'email', 'get_avatar', 'full_name', 'posts_count', 'followers_count', 'following_count', 'saved_posts',)
+        fields = fields = ('id', 'username', 'email', 'get_avatar', 'full_name', 'posts_count', 'followers_count', 'following_count', 'saved_posts', 'notifications_count')
 
     def get_saved_posts(self, obj):
         from post.serializers import PostSerializer
         saved_posts = obj.saved_posts.all()
         return PostSerializer(saved_posts, many=True).data
     
-    
 
+    def get_notifications_count(self, obj):
+        if self.context:
+            req = self.context['request']
+            user = req.user
+            return user.received_notifications.filter(is_read=False).count()

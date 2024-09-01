@@ -2,7 +2,9 @@ import uuid
 
 from django.db import models
 from django.utils.timesince import timesince
+from django.utils import timezone
 from users.models import UserAccount
+from datetime import  timedelta
 
 # Create your models here.
 class Conversation(models.Model):
@@ -12,7 +14,16 @@ class Conversation(models.Model):
     modified_at = models.DateTimeField(auto_now=True)
 
     def modified_at_formatted(self):
-        return timesince(self.modified_at)
+        now = timezone.now()
+        modified = self.modified_at
+        time_difference = now - modified
+
+
+
+        if (time_difference > timedelta(hours=24)):
+            return self.modified_at.strftime("%d/%m")
+
+        return self.modified_at.strftime("%H:%M")
     
 
 class Message(models.Model):
