@@ -44,14 +44,21 @@ class UserSerializer(serializers.ModelSerializer):
 
             return user.following.contains(obj)
         return False
+    
+
+class SuggestedUsersSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserAccount
+        fields = ("id", 'full_name', 'username', 'get_avatar')
 
 class UserDetailSerializer(serializers.ModelSerializer):
     saved_posts = serializers.SerializerMethodField()
     notifications_count = serializers.SerializerMethodField()
+    suggested_people = SuggestedUsersSerializer(read_only=True, many=True)
 
     class Meta:
         model = UserAccount
-        fields = fields = ('id', 'username', 'email', 'get_avatar', 'full_name', 'posts_count', 'followers_count', 'following_count', 'saved_posts', 'notifications_count')
+        fields = ('id', 'username', 'email', 'get_avatar', 'full_name', 'posts_count', 'followers_count', 'following_count', 'saved_posts', 'notifications_count', 'suggested_people')
 
     def get_saved_posts(self, obj):
         from post.serializers import PostSerializer

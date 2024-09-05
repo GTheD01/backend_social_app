@@ -56,6 +56,8 @@ class UserAccount(AbstractBaseUser, PermissionsMixin):
 
     avatar = models.ImageField(upload_to=avatar_upload_to, blank=True, null=True)
 
+    suggested_people = models.ManyToManyField('self')
+
     posts_count = models.IntegerField(default=0)
 
     is_active = models.BooleanField(default=False)
