@@ -3,7 +3,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 
-from post.models import Post, Like, Comment
+from post.models import Post, Like, Comment, PostAttachment
 from users.models import UserAccount
 from django.db.models import Q
 
@@ -85,46 +85,44 @@ def post_delete(request, id):
 
 @api_view(['POST'])
 def create_post(request):
-    form = PostForm(request.POST, request.FILES)
+    form = PostForm(request.POST)
+    images = request.FILES.getlist('image')
 
-    attachment = None
-    attachment_form = AttachmentForm(request.POST, request.FILES)
 
-    if attachment_form.is_valid():
-        attachment = attachment_form.save(commit=False)
-        attachment.created_by = request.user
-        attachment.save()
-    
+    if form.is_valid() or images:
+        if form.is_valid():
+            post = form.save(commit=False)
+            post.created_by = request.user
+            post.save()
+        else:
+            post = Post.objects.create(
+                created_by=request.user,
+                body=""
+            )
+            post.save()
 
-    if form.is_valid():
-        post = form.save(commit=False)
-        post.created_by = request.user
-        post.save()
-
-        if attachment:
-            post.attachments.add(attachment)
-
+        if images:
+            attachment_form = AttachmentForm(request.POST, request.FILES)
+            if attachment_form.is_valid():
+                for image in images:
+                    print(image)
+                    attachment = PostAttachment.objects.create(
+                        created_by=request.user,
+                        image=image
+                    )
+                    attachment.save()
+                # attachment = attachment_form.save(commit=False)
+                # attachment.created_by = request.user
+                # attachment.save()
+                    post.attachments.add(attachment)
+        
         user = request.user
-        user.posts_count = user.posts_count + 1
+        user.posts_count +=1
         user.save()
 
         serializer = PostSerializer(post, context={'request':request})
-
-        return Response(serializer.data)
-    elif attachment:
-        post = Post.objects.create(created_by=request.user, body="")
-        post.save()
-        post.attachments.add(attachment)
-
-        user = request.user
-        user.posts_count = user.posts_count + 1
-        user.save()
-
-        serializer = PostSerializer(post)
-        
-        return Response(serializer.data)
-    else:
-        return Response({'error': "Body text or image attachment required."}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    return Response({'error': "Body text or at least one image attachment is required."}, status=status.HTTP_400_BAD_REQUEST)
     
 
 @api_view(['POST'])
