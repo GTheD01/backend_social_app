@@ -1,10 +1,11 @@
 from django.contrib import admin
 
-from .models import Post, PostAttachment, Like, Comment
+from .models import Post, PostAttachment, Like, Comment, PopularPost
 
 # Register your models here.
 admin.site.register(Post)
 admin.site.register(PostAttachment)
 admin.site.register(Like)
 admin.site.register(Comment)
+admin.site.register(PopularPost)
 

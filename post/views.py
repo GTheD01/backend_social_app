@@ -3,7 +3,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 
-from post.models import Post, Like, Comment, PostAttachment
+from post.models import Post, Like, Comment, PostAttachment, PopularPost
 from users.models import UserAccount
 from django.db.models import Q
 
@@ -216,3 +216,13 @@ def saved_posts(request, username):
         return Response(serializer.data)
     else: 
         return Response(status=status.HTTP_403_FORBIDDEN)
+
+@api_view(["GET"])
+def get_popular_post(request):
+    popular_post = PopularPost.objects.get(id=2)
+    if popular_post:
+        serializer = PostSerializer(popular_post.post)
+
+        return Response(serializer.data)
+    
+    return Response(status=status.HTTP_404_NOT_FOUND)

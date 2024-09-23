@@ -3,6 +3,7 @@ import uuid
 from django.conf import settings
 from django.db import models
 from django.utils.timesince import timesince
+from django.utils import timezone
 
 from users.models import UserAccount
 
@@ -58,3 +59,11 @@ class Post(models.Model):
 
     def __str__(self):
         return self.body
+    
+class PopularPost(models.Model):
+    post = models.ForeignKey("Post", on_delete=models.CASCADE)
+    calculated_at = models.DateTimeField(default=timezone.now)
+
+    
+    def __str__(self):
+        return f"Popular post: {self.post.id} at {self.calculated_at}"
