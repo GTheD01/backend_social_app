@@ -25,7 +25,6 @@ def get_or_create_conversation(request, user_id):
     return Response(serializer.data)
 
 
-
 @api_view(['GET'])
 def conversation_details(request, conversation_id):
     conversation = Conversation.objects.filter(users__in=[request.user]).get(pk=conversation_id)
@@ -37,12 +36,13 @@ def conversation_details(request, conversation_id):
     serializer = ConversationDetailSerializer(conversation)
 
 
-
     return Response(serializer.data)
 
 
 @api_view(['POST'])
 def send_message(request, conversation_id):
+    if len(request.data.get('message')) < 1:
+        return Response(status=status.HTTP_411_LENGTH_REQUIRED)
     conversation = Conversation.objects.filter(users__in=[request.user]).get(pk=conversation_id)
 
     for user in conversation.users.all():

@@ -30,7 +30,7 @@ class Message(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, unique=True)
     conversation = models.ForeignKey(Conversation, related_name='messages', on_delete=models.CASCADE)
     body = models.TextField()
-    sent_to = models.ForeignKey(UserAccount, related_name='received_message', on_delete=models.CASCADE)
+    sent_to = models.ForeignKey(UserAccount, related_name='received_messages', on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(UserAccount, related_name="sent_messages", on_delete=models.CASCADE)
     seen = models.BooleanField(default=False)

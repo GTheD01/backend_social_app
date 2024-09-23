@@ -54,16 +54,25 @@ class SuggestedUsersSerializer(serializers.ModelSerializer):
 class UserDetailSerializer(serializers.ModelSerializer):
     saved_posts = serializers.SerializerMethodField()
     notifications_count = serializers.SerializerMethodField()
+    received_messages_count = serializers.SerializerMethodField()
     suggested_people = SuggestedUsersSerializer(read_only=True, many=True)
 
     class Meta:
         model = UserAccount
-        fields = ('id', 'username', 'email', 'get_avatar', 'full_name', 'posts_count', 'followers_count', 'following_count', 'saved_posts', 'notifications_count', 'suggested_people')
+        fields = ('id', 'username', 'email', 'get_avatar', 'full_name', 'posts_count', 'followers_count', 'following_count', 'saved_posts', 'notifications_count', 'suggested_people', 'received_messages_count')
 
     def get_saved_posts(self, obj):
         from post.serializers import PostSerializer
         saved_posts = obj.saved_posts.all()
         return PostSerializer(saved_posts, many=True).data
+    
+
+    def get_received_messages_count(self, obj):
+        if self.context:
+            req = self.context['request']
+            user = req.user
+            unread_conversations_count = user.received_messages.filter(seen=False).values('conversation').distinct().count()
+            return unread_conversations_count
     
 
     def get_notifications_count(self, obj):
