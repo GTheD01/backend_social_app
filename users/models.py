@@ -48,6 +48,7 @@ class UserAccount(AbstractBaseUser, PermissionsMixin):
     created_at = models.DateTimeField(auto_now_add=True)
     followers = models.ManyToManyField('self', blank=True, symmetrical=False, related_name="followers_set")
     following = models.ManyToManyField('self', blank=True, symmetrical=False, related_name="following_set")
+    mfa_enabled = models.BooleanField(default=False)
 
     saved_posts = models.ManyToManyField('post.Post', blank=True)
 

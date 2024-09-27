@@ -29,7 +29,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = UserAccount
-        fields = ('id', 'username', 'email', 'get_avatar', 'full_name', 'posts_count', 'followers_count', 'following_count', 'user_follows')
+        fields = ('id', 'username', 'email', 'get_avatar', 'full_name', 'posts_count', 'followers_count', 'following_count', 'user_follows', 'mfa_enabled')
 
     def to_representation(self, instance):
         if instance.is_active:
@@ -59,7 +59,7 @@ class UserDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = UserAccount
-        fields = ('id', 'username', 'email', 'get_avatar', 'full_name', 'posts_count', 'followers_count', 'following_count', 'saved_posts', 'notifications_count', 'suggested_people', 'received_messages_count')
+        fields = ('id', 'username', 'email', 'get_avatar', 'full_name', 'posts_count', 'followers_count', 'following_count', 'saved_posts', 'notifications_count', 'suggested_people', 'received_messages_count', 'mfa_enabled')
 
     def get_saved_posts(self, obj):
         from post.serializers import PostSerializer

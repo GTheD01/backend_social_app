@@ -147,6 +147,17 @@ class EditProfileView(APIView):
             serializer = UserSerializer(user)
 
             return Response({'message': 'information updated', 'user':serializer.data})
+        
+
+
+@api_view(['POST'])
+def toggle_otp(request):
+    if request.user:
+        request.user.mfa_enabled = not request.user.mfa_enabled
+        request.user.save()
+
+    
+    return Response(status=status.HTTP_200_OK)
 
 
 @api_view(['GET'])
