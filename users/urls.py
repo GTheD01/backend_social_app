@@ -6,6 +6,7 @@ from .views import (
     CustomTokenVerifyView, 
     LogoutView,
     EditProfileView,
+    VerifyOTPView,
 
     toggle_otp,
     user_details,
@@ -22,6 +23,7 @@ urlpatterns = [
     
     path('jwt/verify/', CustomTokenVerifyView.as_view()),
     path("toggle-mfa/", toggle_otp, name='toggle_mfa'),
+    path("verify-otp/", VerifyOTPView.as_view(), name="verify-otp"),
 
     path('logout/', LogoutView.as_view()),
     path('profile/edit/', EditProfileView.as_view()),

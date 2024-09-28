@@ -66,4 +66,4 @@ class PopularPost(models.Model):
 
     
     def __str__(self):
-        return f"Popular post: {self.post.id} at {self.calculated_at}"
+        return f"Post: {self.post.body} -- Generated at:{self.calculated_at}"

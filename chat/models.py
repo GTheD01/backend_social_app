@@ -19,12 +19,11 @@ class Conversation(models.Model):
         time_difference = now - modified
 
 
-
         if (time_difference > timedelta(hours=24)):
             return self.modified_at.strftime("%d/%m")
 
         return self.modified_at.strftime("%H:%M")
-    
+
 
 class Message(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, unique=True)

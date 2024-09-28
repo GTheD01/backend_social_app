@@ -1,4 +1,4 @@
-import sys
+
 from djoser.serializers import UserCreatePasswordRetypeSerializer
 from rest_framework import serializers
 
