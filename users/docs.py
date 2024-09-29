@@ -1,8 +1,6 @@
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework.response import Response
-from rest_framework import status
-from .serializers import UserSerializer, VerifyOTPSerializer
+from .serializers import UserSerializer
 
 # Schema for CustomTokenObtainPairView
 custom_token_obtain_pair_schema = swagger_auto_schema(

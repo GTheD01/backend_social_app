@@ -4,8 +4,7 @@ from rest_framework.permissions import IsAuthenticated
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from djoser.views import UserViewSet
-from users.models import UserAccount  # Adjust the import as necessary
-from users.serializers import UserSerializer  # Adjust the import based on your serializer
+from users.serializers import UserSerializer  
 
 class CustomUserViewSet(UserViewSet):
     # POST /users/

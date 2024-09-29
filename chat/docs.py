@@ -1,8 +1,5 @@
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
-from rest_framework import status
 
 # Swagger auto schema for get_or_create_conversation view
 get_or_create_conversation_schema = swagger_auto_schema(
