@@ -109,3 +109,6 @@ class OTP(models.Model):
 
     def is_expired(self):
         return timezone.now() > self.expires_at
+    
+    def __str__(self) -> str:
+        return self.code

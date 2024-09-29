@@ -10,19 +10,21 @@ from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView, TokenVerifyView
-from rest_framework.decorators import api_view, permission_classes, authentication_classes
+from rest_framework.decorators import api_view
 from djoser.views import UserViewSet
 
 from notifications.utilities import create_notification
 
-from .serializers import UserSerializer
+from .serializers import UserSerializer, VerifyOTPSerializer
 from users.models import UserAccount, OTP
 from .forms import ProfileForm
+from .docs import *
 
 # Create your views here.
 
 
 class CustomTokenObtainPairView(TokenObtainPairView):
+    @custom_token_obtain_pair_schema
     def post(self, request, *args, **kwargs):
         response = super().post(request, *args, **kwargs)
 
@@ -74,7 +76,6 @@ def create_tokens(user):
 
 def verify_otp(user, otp):
     try:
-        print(user, otp)
         otp = OTP.objects.get(user=user, code=otp)
 
         if otp.is_expired():
@@ -89,26 +90,18 @@ def verify_otp(user, otp):
 
 class VerifyOTPView(generics.GenericAPIView):
     permission_classes = [AllowAny]
+    serializer_class = VerifyOTPSerializer
+    @swagger_auto_schema(**verify_otp_schema)
     def post(self, request, *args, **kwargs):
         email=request.data.get("email")
-
-        if not email:
-            return Response({"message": "Email is required"})
+        otp = request.data.get('otp')
 
         try:
             user = UserAccount.objects.get(email=email)
         except UserAccount.DoesNotExist:
-            return Response({"message": "User not found."}, status=status.HTTP_404_NOT_FOUND)
-
-
-        otp = request.data.get('otp')
-
-        if not otp:
-            return Response({"message": "OTP is required."}, status=status.HTTP_400_BAD_REQUEST)
-
+            return Response({"message": "Invalid email or OTP."}, status=status.HTTP_404_NOT_FOUND)
 
         if verify_otp(user, otp):  
-            print("inside")
             access_token, refresh_token = create_tokens(user)
 
             response = Response({"access": access_token, "refresh": refresh_token})
@@ -137,6 +130,7 @@ class VerifyOTPView(generics.GenericAPIView):
 
 
 class CustomTokenRefreshView(TokenRefreshView):
+    @swagger_auto_schema(**custom_token_refresh_schema)
     def post(self, request, *args, **kwargs):
         refresh_token = request.COOKIES.get("refresh")
 
@@ -163,6 +157,7 @@ class CustomTokenRefreshView(TokenRefreshView):
     
 
 class CustomTokenVerifyView(TokenVerifyView):
+    @swagger_auto_schema(**custom_token_verify_schema)
     def post(self, request, *args, **kwargs):
         access_token = request.COOKIES.get("access")
 
@@ -174,6 +169,7 @@ class CustomTokenVerifyView(TokenVerifyView):
     
 
 class LogoutView(APIView):
+    @swagger_auto_schema(**logout_schema)
     def post(self, request, *args, **kwargs):
         response = Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -215,6 +211,7 @@ class CustomUserViewSet(UserViewSet):
     
 
 class EditProfileView(APIView):
+    @swagger_auto_schema(**edit_profile_schema)
     def post(self, request):
         user = request.user
         email = request.data.get('email')
@@ -236,7 +233,7 @@ class EditProfileView(APIView):
             return Response({'message': 'information updated', 'user':serializer.data})
         
 
-
+@toggle_otp_schema
 @api_view(['POST'])
 def toggle_otp(request):
     if request.user:
@@ -247,6 +244,7 @@ def toggle_otp(request):
     return Response({"mfa":request.user.mfa_enabled},status=status.HTTP_200_OK)
 
 
+@user_details_schema
 @api_view(['GET'])
 def user_details(request, username):
     user = UserAccount.objects.get(username=username)
@@ -255,6 +253,7 @@ def user_details(request, username):
     return Response(serializer.data)
 
 
+@search_users_schema
 @api_view(["GET"])
 def search_users(request):
     slug = request.GET.get('search', '')
@@ -268,6 +267,7 @@ def search_users(request):
     return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+@follow_user_schema
 @api_view(['POST'])
 def follow_user(request, username):
     user = request.user

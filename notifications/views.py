@@ -4,9 +4,12 @@ from rest_framework import status
 
 from .models import Notification
 from .serializers import NotificationSerializer
+from .docs import *
+
 
 # Create your views here.
 
+@notifications_list_schema
 @api_view(["GET"])
 def notifications_list(request):
     user = request.user
@@ -16,6 +19,7 @@ def notifications_list(request):
     return Response(serializer.data)
 
 
+@read_notification_schema
 @api_view(["POST"])
 def read_notification(request, id):
     notification = Notification.objects.filter(created_for=request.user).get(pk=id)

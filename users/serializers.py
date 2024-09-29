@@ -80,3 +80,8 @@ class UserDetailSerializer(serializers.ModelSerializer):
             req = self.context['request']
             user = req.user
             return user.received_notifications.filter(is_read=False).count()
+
+
+class VerifyOTPSerializer(serializers.Serializer):
+    email = serializers.EmailField(required=True)
+    otp = serializers.CharField(required=True, max_length=6)

@@ -6,7 +6,7 @@ urlpatterns = [
     path("profile/<str:username>/", post_list_profile, name="post_list_profile"),
     path("<uuid:id>/", post_detail, name='post_detail'),
     path("delete/<uuid:id>/", post_delete),
-    path("create/", create_post, name='post_list'),
+    path("create/", create_post, name='create_post'),
     path("like/<uuid:id>/", like_post, name="post_like"),
     path("comment/<uuid:id>/", comment_post, name="post_comment"),
     path("<uuid:postId>/comment/delete/<uuid:commentId>/", delete_comment, name="comment_delete"),
