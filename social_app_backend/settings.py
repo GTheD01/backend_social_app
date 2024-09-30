@@ -41,10 +41,16 @@ DEBUG = getenv("DEBUG", 'False') == 'True'
 
 ALLOWED_HOSTS = getenv('DJANGO_ALLOWED_HOSTS', '127.0.0.1, localhost').split(',')
 
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer'
+    }
+}
 
 # Application definition
 
 INSTALLED_APPS = [
+    'daphne',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -94,6 +100,8 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'social_app_backend.wsgi.application'
+ASGI_APPLICATION = 'social_app_backend.asgi.application'
+
 
 
 # Database
@@ -194,7 +202,7 @@ AUTH_COOKIE_SAMESITE = 'None'
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Europe/Zurich'
 
 USE_I18N = True
 
