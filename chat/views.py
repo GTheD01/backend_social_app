@@ -42,31 +42,6 @@ def conversation_details(request, conversation_id):
 
     return Response(serializer.data)
 
-
-@send_message_schema
-@api_view(['POST'])
-def send_message(request, conversation_id):
-    if len(request.data.get('message')) < 1:
-        return Response(status=status.HTTP_411_LENGTH_REQUIRED)
-    conversation = Conversation.objects.filter(users__in=[request.user]).get(pk=conversation_id)
-
-    for user in conversation.users.all():
-        if user != request.user:
-            sent_to = user
-
-    
-    message = Message.objects.create(
-        conversation=conversation,
-        body=request.data.get('message'),
-        created_by=request.user,
-        sent_to=sent_to
-    )
-
-    serializer = MessageSerializer(message)
-
-    return Response(serializer.data)
-
-
 @conversation_list_schema
 @api_view(['GET'])
 def conversation_list(request):
