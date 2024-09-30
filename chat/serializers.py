@@ -52,6 +52,7 @@ class ConversationSerializer(serializers.ModelSerializer):
 
 class ConversationDetailSerializer(serializers.ModelSerializer):
     messages = MessageSerializer(read_only=True, many=True)
+    users = UserSerializer(many=True, read_only=True)
     
     class Meta:
         model = Conversation
