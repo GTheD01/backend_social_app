@@ -33,29 +33,44 @@ class ChatConsumer(AsyncWebsocketConsumer):
         sent_to_id = data['data']['sent_to_id']
         name = data['data']['name']
         body = data['data']['body']
-        
-        await self.channel_layer.group_send(
-            self.room_group_name,
-            {
-                'type': 'chat_message',
-                'body': body,
-                'name': name
-            }
-        )
 
-        await self.save_message(conversation_id, body, sent_to_id)
-    
+        message = await self.save_message(conversation_id, body, sent_to_id)
+        
+
+        # If the message was saved successfully, send it to the group
+        if message:
+
+            await self.channel_layer.group_send(
+                self.room_group_name,
+                {
+                    'type': 'chat_message',
+                    'body': body,
+                    'name': name,
+                    'message_id': str(message.id),
+                    'created_at': str(message.created_at_formatted()),
+                    'created_by_id': str(message.created_by.id)
+                }
+            )
+
+        
+
     # send messages
     async def chat_message(self, event):
         body = event['body']
         name = event['name']
+        message_id = event['message_id']
+        created_at = event['created_at']
+        created_by_id = event['created_by_id']
         
         await self.send(text_data=json.dumps({
             'body': body,
-            'name': name
+            'name': name,
+            'message_id': str(message_id),
+            'created_at': str(created_at),
+            "created_by_id": created_by_id
         }))
 
     @sync_to_async
     def save_message(self, conversation_id, body, sent_to_id):
         user = self.scope['user']
-        Message.objects.create(conversation_id=conversation_id, body=body, sent_to_id=sent_to_id, created_by=user)
+        return Message.objects.create(conversation_id=conversation_id, body=body, sent_to_id=sent_to_id, created_by=user)

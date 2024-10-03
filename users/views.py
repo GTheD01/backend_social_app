@@ -18,13 +18,11 @@ from notifications.utilities import create_notification
 from .serializers import UserSerializer, VerifyOTPSerializer
 from users.models import UserAccount, OTP
 from .forms import ProfileForm
-from .docs import *
 
 # Create your views here.
 
 
 class CustomTokenObtainPairView(TokenObtainPairView):
-    @custom_token_obtain_pair_schema
     def post(self, request, *args, **kwargs):
         response = super().post(request, *args, **kwargs)
 
@@ -91,7 +89,7 @@ def verify_otp(user, otp):
 class VerifyOTPView(generics.GenericAPIView):
     permission_classes = [AllowAny]
     serializer_class = VerifyOTPSerializer
-    @swagger_auto_schema(**verify_otp_schema)
+
     def post(self, request, *args, **kwargs):
         email=request.data.get("email")
         otp = request.data.get('otp')
@@ -130,7 +128,6 @@ class VerifyOTPView(generics.GenericAPIView):
 
 
 class CustomTokenRefreshView(TokenRefreshView):
-    @swagger_auto_schema(**custom_token_refresh_schema)
     def post(self, request, *args, **kwargs):
         refresh_token = request.COOKIES.get("refresh")
 
@@ -157,7 +154,6 @@ class CustomTokenRefreshView(TokenRefreshView):
     
 
 class CustomTokenVerifyView(TokenVerifyView):
-    @swagger_auto_schema(**custom_token_verify_schema)
     def post(self, request, *args, **kwargs):
         access_token = request.COOKIES.get("access")
 
@@ -169,7 +165,6 @@ class CustomTokenVerifyView(TokenVerifyView):
     
 
 class LogoutView(APIView):
-    @swagger_auto_schema(**logout_schema)
     def post(self, request, *args, **kwargs):
         response = Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -203,7 +198,6 @@ class CustomUserViewSet(UserViewSet):
     queryset = UserAccount.objects.filter(is_active=True)
     serializer_class = UserSerializer
 
-
     def get_queryset(self):
         queryset = super().get_queryset()
 
@@ -211,8 +205,7 @@ class CustomUserViewSet(UserViewSet):
     
 
 class EditProfileView(APIView):
-    @swagger_auto_schema(**edit_profile_schema)
-    def post(self, request):
+    def patch(self, request):
         user = request.user
         email = request.data.get('email')
         username = request.data.get('username')
@@ -233,7 +226,7 @@ class EditProfileView(APIView):
             return Response({'message': 'information updated', 'user':serializer.data})
         
 
-@toggle_otp_schema
+
 @api_view(['POST'])
 def toggle_otp(request):
     if request.user:
@@ -244,7 +237,7 @@ def toggle_otp(request):
     return Response({"mfa":request.user.mfa_enabled},status=status.HTTP_200_OK)
 
 
-@user_details_schema
+
 @api_view(['GET'])
 def user_details(request, username):
     user = UserAccount.objects.get(username=username)
@@ -253,7 +246,7 @@ def user_details(request, username):
     return Response(serializer.data)
 
 
-@search_users_schema
+
 @api_view(["GET"])
 def search_users(request):
     slug = request.GET.get('search', '')
@@ -267,7 +260,6 @@ def search_users(request):
     return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-@follow_user_schema
 @api_view(['POST'])
 def follow_user(request, username):
     user = request.user

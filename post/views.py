@@ -12,10 +12,8 @@ from notifications.utilities import create_notification
 from .forms import PostForm, AttachmentForm
 from .serializers import PostSerializer, CommentSerializer
 from .paginations import PostCursorPagination
-from .docs import *
 # Create your views here.
 
-@post_list_schema
 @api_view(["GET"])
 def post_list(request):
     user = request.user
@@ -33,7 +31,6 @@ def post_list(request):
     return paginator.get_paginated_response(serializer.data)
 
 
-@post_list_profile_schema
 @api_view(['GET'])
 def post_list_profile(request, username):
     user = UserAccount.objects.get(username=username)
@@ -44,7 +41,6 @@ def post_list_profile(request, username):
     return Response(serializer.data)
 
 
-@post_detail_schema
 @api_view(['GET'])
 def post_detail(request, id):
     try:
@@ -57,7 +53,6 @@ def post_detail(request, id):
     return Response(serializer.data)
 
 
-@post_delete_schema
 @api_view(['DELETE'])
 def post_delete(request, id):
     user = request.user
@@ -88,7 +83,6 @@ def post_delete(request, id):
     return Response({'message': "Post deleted"})
 
 
-@create_post_schema
 @api_view(['POST'])
 def create_post(request):
     form = PostForm(request.POST)
@@ -131,7 +125,6 @@ def create_post(request):
     return Response({'error': "Body text or at least one image attachment is required."}, status=status.HTTP_400_BAD_REQUEST)
     
 
-@like_post_schema
 @api_view(['POST'])
 def like_post(request, id):
     post = Post.objects.get(pk=id)
@@ -146,7 +139,7 @@ def like_post(request, id):
         serializer = PostSerializer(post, context={"request":request})
 
         if post.created_by != request.user:
-            notification = create_notification(request, 'post_liked', post_id=id)
+            create_notification(request, 'post_liked', post_id=id)
 
         return Response(serializer.data)
     else:
@@ -159,7 +152,6 @@ def like_post(request, id):
         return Response(serializer.data)
     
 
-@comment_post_schema
 @api_view(['POST'])
 def comment_post(request, id):
     body = request.data.get("body")
@@ -173,14 +165,13 @@ def comment_post(request, id):
     post.save()
 
     if post.created_by != request.user:
-        notification = create_notification(request, 'post_commented', post_id=id)
+        create_notification(request, 'post_commented', post_id=id)
 
     serializer = CommentSerializer(comment, context={"request":request})
 
     return Response(serializer.data)
 
 
-@delete_comment_schema
 @api_view(['POST'])
 def delete_comment(request, postId, commentId):
     post = Post.objects.get(pk=postId)
@@ -199,7 +190,6 @@ def delete_comment(request, postId, commentId):
     return Response({"message": "Comment deleted"})
 
 
-@save_post_schema
 @api_view(['POST'])
 def save_post(request, id):
     post = Post.objects.get(pk=id)
@@ -213,7 +203,6 @@ def save_post(request, id):
     return Response(serializer.data)
 
     
-@saved_posts_schema
 @api_view(['GET'])
 def saved_posts(request, username):
     user = request.user
@@ -228,7 +217,6 @@ def saved_posts(request, username):
         return Response(status=status.HTTP_403_FORBIDDEN)
 
 
-@get_popular_post_schema
 @api_view(["GET"])
 def get_popular_post(request):
     popular_post = PopularPost.objects.get(id=2)

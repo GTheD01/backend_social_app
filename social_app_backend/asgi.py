@@ -20,13 +20,14 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'social_app_backend.settings')
 application = get_asgi_application()
 
 from chat import routing
+from notifications import routing as notificationsrouting
 from chat.token_auth import TokenAuthMiddleware
 
 application = ProtocolTypeRouter({
     "http": get_asgi_application(),
     'websocket': TokenAuthMiddleware(
         URLRouter(
-            routing.websocket_urlpatterns
+            routing.websocket_urlpatterns + notificationsrouting.websocket_urlpatterns
         )
     )
 })

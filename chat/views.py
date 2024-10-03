@@ -5,11 +5,9 @@ from rest_framework import status
 from users.models import UserAccount
 from .models import Conversation, Message
 from .serializers import ConversationSerializer, MessageSerializer, ConversationDetailSerializer
-from .docs import *
 
 # Create your views here.
 
-@get_or_create_conversation_schema
 @api_view(['GET'])
 def get_or_create_conversation(request, user_id):
     user = UserAccount.objects.get(pk=user_id)
@@ -28,7 +26,6 @@ def get_or_create_conversation(request, user_id):
     return Response(serializer.data)
 
 
-@conversation_details_schema
 @api_view(['GET'])
 def conversation_details(request, conversation_id):
     conversation = Conversation.objects.filter(users__in=[request.user]).get(pk=conversation_id)
@@ -42,7 +39,6 @@ def conversation_details(request, conversation_id):
 
     return Response(serializer.data)
 
-@conversation_list_schema
 @api_view(['GET'])
 def conversation_list(request):
     conversations = Conversation.objects.filter(users__in=[request.user])

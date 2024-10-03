@@ -25,14 +25,15 @@ from rest_framework.permissions import AllowAny
 
 from drf_yasg import openapi
 from drf_yasg.views import get_schema_view as swagger_get_schema_view
-from .docs import CustomUserViewSet
+
 
 
 schema_view = swagger_get_schema_view(
     openapi.Info(
         title="Socializing API",
         default_version="1.0.0",
-        description="API documentation of Socializing"
+        description="API documentation of Socializing",
+        terms_of_service="https://www.google.com/policies/terms/",
     ),
     public=True,
     permission_classes=[AllowAny]
@@ -45,16 +46,8 @@ urlpatterns = [
     path('api/notifications/', include('notifications.urls')),
     path('api/chat/', include('chat.urls')),
     path('api/', include('users.urls')),
-    path("swagger/schema/", schema_view.with_ui("swagger", cache_timeout=0), name="swagger-schema"),
-    path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
-    # path("api/", include('djoser.urls')),
-    path('api/users/', CustomUserViewSet.as_view({'post': 'create'}), name='user-list-create'),
-    path('api/users/me/', CustomUserViewSet.as_view({'get': 'me', 'put': 'me', 'patch': 'partial_update', 'delete': 'destroy'}), name='user-me'),
-    path('api/users/<int:pk>/', CustomUserViewSet.as_view({'get': 'retrieve', 'put': 'update', 'patch': 'partial_update', 'delete': 'destroy'}), name='user-detail'),
-    path('api/users/activation/', CustomUserViewSet.as_view({'post': 'activation'}), name='user-activation'),
-    path('api/users/resend_activation/', CustomUserViewSet.as_view({'post': 'resend_activation'}), name='user-resend-activation'),
-    path('api/users/reset_password/', CustomUserViewSet.as_view({'post': 'reset_password'}), name='user-reset-password'),
-    path('api/users/reset_password_confirm/', CustomUserViewSet.as_view({'post': 'reset_password_confirm'}), name='user-reset-password-confirm'),
+    path("docs/", schema_view.with_ui("swagger", cache_timeout=0), name="swagger-schema"),
+    path("api/", include('djoser.urls')),
 ]
 
 
