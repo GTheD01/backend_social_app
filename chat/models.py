@@ -3,13 +3,15 @@ import uuid
 from django.db import models
 from django.utils.timesince import timesince
 from django.utils import timezone
-from users.models import UserAccount
 from datetime import  timedelta
+
+from social_app_backend.settings import AUTH_USER_MODEL
+from users.models import UserAccount
 
 # Create your models here.
 class Conversation(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, unique=True)
-    users = models.ManyToManyField(UserAccount, related_name="conversations")
+    users = models.ManyToManyField(AUTH_USER_MODEL, related_name="conversations")
     created_at = models.DateTimeField(auto_now_add=True)
     modified_at = models.DateTimeField(auto_now=True)
 
@@ -29,9 +31,9 @@ class Message(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, unique=True)
     conversation = models.ForeignKey(Conversation, related_name='messages', on_delete=models.CASCADE)
     body = models.TextField()
-    sent_to = models.ForeignKey(UserAccount, related_name='received_messages', on_delete=models.CASCADE)
+    sent_to = models.ForeignKey(AUTH_USER_MODEL, related_name='received_messages', on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
-    created_by = models.ForeignKey(UserAccount, related_name="sent_messages", on_delete=models.CASCADE)
+    created_by = models.ForeignKey(AUTH_USER_MODEL, related_name="sent_messages", on_delete=models.CASCADE)
     seen = models.BooleanField(default=False)
 
     class Meta:

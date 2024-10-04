@@ -1,6 +1,8 @@
 import uuid
 
 from django.db import models
+
+from social_app_backend.settings import AUTH_USER_MODEL
 from post.models import Post
 from users.models import UserAccount
 
@@ -19,8 +21,8 @@ class Notification(models.Model):
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, unique=True)
     body = models.TextField()
-    created_by = models.ForeignKey(UserAccount, on_delete=models.CASCADE, related_name="created_notifications")
-    created_for = models.ForeignKey(UserAccount, on_delete=models.CASCADE, related_name="received_notifications")
+    created_by = models.ForeignKey(AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="created_notifications")
+    created_for = models.ForeignKey(AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="received_notifications")
     post = models.ForeignKey(Post, on_delete=models.CASCADE, blank=True, null=True)
     is_read = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)

@@ -5,16 +5,17 @@ from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseU
 from PIL import Image
 from datetime import timedelta
 from django.utils import timezone
+
+from social_app_backend.settings import AUTH_USER_MODEL
 import shortuuid
 
+from post.models import Post
 
-# Create your models here.
 
 class UserAccountManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
         if not email:
             raise ValueError("The email field must be set")
-
 
         email = self.normalize_email(email)
         email = email.lower()
@@ -24,7 +25,6 @@ class UserAccountManager(BaseUserManager):
         user.save(using=self._db)
 
         return user
-
 
     def create_superuser(self, email, password=None, **extra_fields):
         user = self.create_user(email, password=password, **extra_fields)
@@ -41,24 +41,22 @@ def avatar_upload_to(instance, filename):
     return f"avatars/{instance.username}/{filename}"
 
 class UserAccount(AbstractBaseUser, PermissionsMixin):
-    
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, unique=True)
     username = models.CharField(max_length=255, unique=True)
     full_name = models.CharField(max_length=255)
     email = models.CharField(max_length=255, unique=True)
+    avatar = models.ImageField(upload_to=avatar_upload_to, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    followers = models.ManyToManyField('self', blank=True, symmetrical=False, related_name="followers_set")
-    following = models.ManyToManyField('self', blank=True, symmetrical=False, related_name="following_set")
+    followers = models.ManyToManyField('self', blank=True, symmetrical=False, related_name="following")
     mfa_enabled = models.BooleanField(default=False)
 
-    saved_posts = models.ManyToManyField('post.Post', blank=True)
+    saved_posts = models.ManyToManyField(Post, blank=True)
 
     followers_count = models.IntegerField(default=0)
     following_count = models.IntegerField(default=0)
 
-    avatar = models.ImageField(upload_to=avatar_upload_to, blank=True, null=True)
 
-    suggested_people = models.ManyToManyField('self')
+    suggested_people = models.ManyToManyField('self', blank=True)
 
     posts_count = models.IntegerField(default=0)
 
@@ -96,7 +94,7 @@ class UserAccount(AbstractBaseUser, PermissionsMixin):
 class OTP(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, unique=True)
     code = models.CharField(max_length=6, null=True)
-    user = models.ForeignKey(UserAccount, on_delete=models.CASCADE, related_name="otps")
+    user = models.ForeignKey(AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="otps")
     created_at = models.DateTimeField(auto_now_add=True)
     expires_at = models.DateTimeField()
 

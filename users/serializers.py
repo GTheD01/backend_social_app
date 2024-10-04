@@ -1,4 +1,4 @@
-
+from django.db.models import Q
 from djoser.serializers import UserCreatePasswordRetypeSerializer
 from rest_framework import serializers
 
@@ -44,6 +44,22 @@ class UserSerializer(serializers.ModelSerializer):
 
             return user.following.contains(obj)
         return False
+    
+
+class ProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserAccount
+        fields = ('full_name', 'username', 'email', 'avatar')
+    
+    def validate(self, attrs):
+        user = self.context['request'].user
+        email = attrs.get('email')
+        username = attrs.get('username')
+
+        if UserAccount.objects.exclude(id=user.id).filter(Q(email=email) | Q(username=username)).exists():
+            raise serializers.ValidationError("Email or username already exists.")
+
+        return attrs
     
 
 class SuggestedUsersSerializer(serializers.ModelSerializer):

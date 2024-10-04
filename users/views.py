@@ -1,25 +1,26 @@
 
 from django.conf import settings
-from django.utils import timezone
+from django.contrib.auth import get_user_model
 from django.core.mail import send_mail
 
-from django.db.models import Q
+from django.shortcuts import get_object_or_404
 from rest_framework import status, generics
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
-from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView, TokenVerifyView
 from rest_framework.decorators import api_view
+from rest_framework.generics import UpdateAPIView, RetrieveAPIView, ListAPIView
 from djoser.views import UserViewSet
 
 from notifications.utilities import create_notification
 
-from .serializers import UserSerializer, VerifyOTPSerializer
-from users.models import UserAccount, OTP
-from .forms import ProfileForm
+from users.models import OTP
+from .serializers import ProfileSerializer, UserSerializer, VerifyOTPSerializer
 
-# Create your views here.
+from .utils import create_tokens, verify_otp
+
+UserAccount = get_user_model()
 
 
 class CustomTokenObtainPairView(TokenObtainPairView):
@@ -62,28 +63,6 @@ class CustomTokenObtainPairView(TokenObtainPairView):
             )
 
         return response
-
-
-def create_tokens(user):
-    refresh = RefreshToken.for_user(user)
-    access_token = str(refresh.access_token)
-    refresh_token = str(refresh)
-
-    return access_token, refresh_token
-
-
-def verify_otp(user, otp):
-    try:
-        otp = OTP.objects.get(user=user, code=otp)
-
-        if otp.is_expired():
-            otp.delete()
-            return False
-        
-        otp.delete()
-        return True
-    except OTP.DoesNotExist:
-        return False
 
 
 class VerifyOTPView(generics.GenericAPIView):
@@ -131,7 +110,6 @@ class CustomTokenRefreshView(TokenRefreshView):
     def post(self, request, *args, **kwargs):
         refresh_token = request.COOKIES.get("refresh")
 
-
         if refresh_token:
             request.data['refresh'] = refresh_token
         
@@ -168,7 +146,6 @@ class LogoutView(APIView):
     def post(self, request, *args, **kwargs):
         response = Response(status=status.HTTP_204_NO_CONTENT)
 
-
         response.set_cookie(
                 'access', 
                 '', 
@@ -202,83 +179,76 @@ class CustomUserViewSet(UserViewSet):
         queryset = super().get_queryset()
 
         return queryset
-    
 
-class EditProfileView(APIView):
-    def patch(self, request):
-        user = request.user
-        email = request.data.get('email')
-        username = request.data.get('username')
 
-        if UserAccount.objects.exclude(id=user.id).filter(Q(email=email ) | Q(username=username)).exists():
-            return Response({'message':"email or username already exists"})
-        else:
-            if request.FILES and user.avatar:
-                user.avatar.delete()
+class EditProfileView(UpdateAPIView):
+    queryset = UserAccount.objects.all()
+    serializer_class = ProfileSerializer
 
-            form = ProfileForm(request.POST, request.FILES, instance=user)
+    def get_object(self):
+        return self.request.user
 
-            if form.is_valid():
-                form.save()
-            
-            serializer = UserSerializer(user)
+    def patch(self, request, *args, **kwargs):
+        user = self.get_object()
+        if request.FILES and user.avatar:
+            user.avatar.delete()
+        
+        serializer = self.get_serializer(user, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
 
-            return Response({'message': 'information updated', 'user':serializer.data})
+        return Response({'message': 'Information updated', 'user': serializer.data}, status=status.HTTP_200_OK)
         
 
+class ToggleOTPView(APIView):
+    def post(self, request, *args, **kwargs):
+        user = request.user
 
-@api_view(['POST'])
-def toggle_otp(request):
-    if request.user:
-        request.user.mfa_enabled = not request.user.mfa_enabled
-        request.user.save()
+        if user:
+            user.mfa_enabled = not user.mfa_enabled
+            user.save()
 
+            return Response({"mfa":request.user.mfa_enabled},status=status.HTTP_200_OK)      
+        
 
-    return Response({"mfa":request.user.mfa_enabled},status=status.HTTP_200_OK)
-
-
-
-@api_view(['GET'])
-def user_details(request, username):
-    user = UserAccount.objects.get(username=username)
-    serializer = UserSerializer(user,  context={"request": request})
-
-    return Response(serializer.data)
+class UserDetailsView(RetrieveAPIView):
+    queryset = UserAccount.objects.all()
+    serializer_class = UserSerializer
+    lookup_field = 'username'
 
 
-@api_view(["GET"])
-def search_users(request):
-    slug = request.GET.get('search', '')
-    if slug:
-        users = UserAccount.objects.filter(is_active=True, username__icontains=slug).exclude(id=request.user.id)
-
-        serializer = UserSerializer(users, many=True, context={"request": request})
-
-        return Response(serializer.data)
-
-    return Response(status=status.HTTP_204_NO_CONTENT)
+class SearchUsersView(ListAPIView):
+    serializer_class = UserSerializer
+    
+    def get_queryset(self):
+        slug = self.request.query_params.get("search", None)
+        if slug:
+            return UserAccount.objects.filter(is_active=True, username__icontains=slug).exclude(id=self.request.user.id)
+        return UserAccount.objects.none()
 
 
-@api_view(['POST'])
-def follow_user(request, username):
-    user = request.user
-    user_to_follow = UserAccount.objects.get(username=username)
+class FollowUserView(APIView):
+    def post(self, request, *args, **kwargs):
+        user = request.user
+        username = self.kwargs['username']
+        user_to_follow = get_object_or_404(UserAccount, username=username)
 
-    if not user.following.contains(user_to_follow) and user.id != user_to_follow.id:
-        user.following.add(user_to_follow)
-        user.following_count = user.following_count + 1
-        user_to_follow.followers.add(user)
-        user_to_follow.followers_count = user_to_follow.followers_count + 1
-        user.save()
-        user_to_follow.save()
-        notification = create_notification(request, 'new_follower', username=username)
+        if not user.following.contains(user_to_follow) and user.id != user_to_follow.id:
+            user.following.add(user_to_follow)
+            user.following_count += 1
+            user_to_follow.followers.add(user)
+            user_to_follow.followers_count += 1
+            user.save()
+            user_to_follow.save()
+            notification = create_notification(request, 'new_follower', username=username)
 
-        return Response({'message': "User followed"})
-    else:
-        user.following.remove(user_to_follow)
-        user.following_count = user.following_count - 1
-        user_to_follow.followers.remove(user)
-        user_to_follow.followers_count = user_to_follow.followers_count - 1
-        user.save()
-        user_to_follow.save()
-        return Response({"message": "User unfollowed"})
+            return Response({'message': "User followed"})
+        else:
+            user.following.remove(user_to_follow)
+            user.following_count -=1
+            user_to_follow.followers.remove(user)
+            user_to_follow.followers_count -= 1
+            user.save()
+            user_to_follow.save()
+            
+            return Response({"message": "User unfollowed"})

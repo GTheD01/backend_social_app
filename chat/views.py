@@ -1,12 +1,12 @@
-from rest_framework.decorators import api_view, permission_classes, authentication_classes
+from django.contrib.auth import get_user_model
+
+from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from rest_framework import status
 
-from users.models import UserAccount
-from .models import Conversation, Message
-from .serializers import ConversationSerializer, MessageSerializer, ConversationDetailSerializer
+from .models import Conversation
+from .serializers import ConversationSerializer, ConversationDetailSerializer
 
-# Create your views here.
+UserAccount = get_user_model()
 
 @api_view(['GET'])
 def get_or_create_conversation(request, user_id):

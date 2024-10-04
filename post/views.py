@@ -6,14 +6,15 @@ from rest_framework.generics import (ListCreateAPIView,
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from rest_framework import status
+from django.contrib.auth import get_user_model
 
 from post.models import Post, Comment, PostAttachment, PopularPost
-from users.models import UserAccount
 from .serializers import PostSerializer, CommentSerializer
 from .paginations import PostCursorPagination
 from .permissions import IsOwnerOrReadOnly
 from notifications.utilities import create_notification
 
+UserAccount = get_user_model()
 
 
 class PostListCreateView(ListCreateAPIView):
