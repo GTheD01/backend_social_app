@@ -233,7 +233,7 @@ def toggle_otp(request):
         request.user.mfa_enabled = not request.user.mfa_enabled
         request.user.save()
 
-    
+
     return Response({"mfa":request.user.mfa_enabled},status=status.HTTP_200_OK)
 
 
@@ -244,7 +244,6 @@ def user_details(request, username):
     serializer = UserSerializer(user,  context={"request": request})
 
     return Response(serializer.data)
-
 
 
 @api_view(["GET"])

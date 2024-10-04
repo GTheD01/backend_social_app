@@ -7,12 +7,6 @@ from django.utils import timezone
 
 from users.models import UserAccount
 
-# Create your models here.
-class Like(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, unique=True)
-    created_by = models.ForeignKey(UserAccount, related_name="likes", on_delete=models.CASCADE)
-    created_at = models.DateTimeField(auto_now_add=True)
-
 
 class Comment(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, unique=True)
@@ -38,7 +32,7 @@ class PostAttachment(models.Model):
         
 class Post(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, unique=True)
-    body = models.TextField()
+    body = models.TextField(blank=True, null=True)
     created_by = models.ForeignKey(UserAccount, related_name='posts',on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -46,7 +40,7 @@ class Post(models.Model):
     comments = models.ManyToManyField(Comment, blank=True)
     comments_count = models.IntegerField(default=0)
 
-    likes = models.ManyToManyField(Like, blank=True)
+    likes = models.ManyToManyField(UserAccount, blank=True)
     likes_count = models.IntegerField(default=0)
 
     class Meta:

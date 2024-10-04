@@ -1,228 +1,173 @@
-import os
-from rest_framework.decorators import api_view
+from rest_framework.generics import (ListCreateAPIView, 
+                                    RetrieveUpdateDestroyAPIView, 
+                                    GenericAPIView, 
+                                    ListAPIView, 
+                                    )
 from rest_framework.response import Response
+from django.shortcuts import get_object_or_404
 from rest_framework import status
 
-from post.models import Post, Like, Comment, PostAttachment, PopularPost
+from post.models import Post, Comment, PostAttachment, PopularPost
 from users.models import UserAccount
-from django.db.models import Q
-
-from notifications.utilities import create_notification
-
-from .forms import PostForm, AttachmentForm
 from .serializers import PostSerializer, CommentSerializer
 from .paginations import PostCursorPagination
-# Create your views here.
-
-@api_view(["GET"])
-def post_list(request):
-    user = request.user
-    users =[user]
-    for u in user.following.all():
-        users.append(u)
-    posts = Post.objects.filter(created_by__in=users)
-
-    paginator = PostCursorPagination()
-
-    result_page = paginator.paginate_queryset(posts, request)
-
-    serializer = PostSerializer(result_page, many=True, context={'request':request})
-
-    return paginator.get_paginated_response(serializer.data)
+from .permissions import IsOwnerOrReadOnly
+from notifications.utilities import create_notification
 
 
-@api_view(['GET'])
-def post_list_profile(request, username):
-    user = UserAccount.objects.get(username=username)
-    posts = Post.objects.filter(created_by=user.id)
 
-    serializer = PostSerializer(posts, many=True, context={"request": request})
+class PostListCreateView(ListCreateAPIView):
+    queryset = Post.objects.all()
+    serializer_class = PostSerializer
+    pagination_class = PostCursorPagination
 
-    return Response(serializer.data)
+    def get_queryset(self):
+        user = self.request.user
+        users = [user] + list(user.following.all())
+        return Post.objects.filter(created_by__in=users)
 
-
-@api_view(['GET'])
-def post_detail(request, id):
-    try:
-        post = Post.objects.get(pk=id)
-
-        serializer = PostSerializer(post, context={'request': request})
-    except:
-        return Response({'error': "Post not found"})
-
-    return Response(serializer.data)
-
-
-@api_view(['DELETE'])
-def post_delete(request, id):
-    user = request.user
-
-    post = Post.objects.filter(created_by=user.id).get(pk=id)
-    if post.attachments:
-        for attachment in post.attachments.all():
-            file_path = attachment.image.path # getting file path(not needed in production since we store images elsewhere)
-            attachment.delete()
-
-            # Deleting uploaded files (not needed this in production)
-            if os.path.isfile(file_path):
-                os.remove(file_path)
-    
-    # Using this approach because ManyToManyField cannot have on_delete=CASCADE
-    # Another approach will be to create separate model that connects like model and post model through that separate model with ForeignKeys
-    if post.likes:
-        for like in post.likes.all():
-            like.delete()
-
-
-    post.delete()
-
-    # WORKS
-    user.posts_count = user.posts_count - 1
-    user.save()
-
-    return Response({'message': "Post deleted"})
-
-
-@api_view(['POST'])
-def create_post(request):
-    form = PostForm(request.POST)
-    images = request.FILES.getlist('image')
-
-
-    if form.is_valid() or images:
-        if form.is_valid():
-            post = form.save(commit=False)
-            post.created_by = request.user
-            post.save()
-        else:
-            post = Post.objects.create(
-                created_by=request.user,
-                body=""
-            )
-            post.save()
+    def perform_create(self, serializer):
+        images = self.request.FILES.getlist('image')
+        user = self.request.user
+        
+        post = serializer.save(created_by=user)
 
         if images:
-            attachment_form = AttachmentForm(request.POST, request.FILES)
-            if attachment_form.is_valid():
-                for image in images:
-                    print(image)
-                    attachment = PostAttachment.objects.create(
-                        created_by=request.user,
-                        image=image
-                    )
-                    attachment.save()
-                # attachment = attachment_form.save(commit=False)
-                # attachment.created_by = request.user
-                # attachment.save()
-                    post.attachments.add(attachment)
+            for image in images:
+                attachment = PostAttachment.objects.create(created_by=user, image=image)
+                post.attachments.add(attachment)
         
-        user = request.user
         user.posts_count +=1
         user.save()
 
-        serializer = PostSerializer(post, context={'request':request})
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-    return Response({'error': "Body text or at least one image attachment is required."}, status=status.HTTP_400_BAD_REQUEST)
+        return post
+
+
+class RetrieveUpdateDeletePostView(RetrieveUpdateDestroyAPIView):
+    queryset = Post
+    serializer_class = PostSerializer
+    permission_classes = [IsOwnerOrReadOnly]
+    lookup_field = 'id'
+
+
+class RetrieveUserPostsView(ListAPIView):
+    queryset = Post.objects.all()
+    serializer_class = PostSerializer
+
+    def get_queryset(self):
+        username = self.kwargs['username']
+        user = get_object_or_404(UserAccount, username=username)
+        return Post.objects.filter(created_by=user)
+        
+
+class LikePostApiView(GenericAPIView):
+    queryset = Post
+    serializer_class = PostSerializer
+    lookup_field = 'id'
+
+    def post(self, request, *args, **kwargs):
+        post = self.get_object()
+
+        if post.likes.filter(id=request.user.id).exists():
+            post.likes.remove(request.user)
+            post.likes_count -= 1
+            post.save()
+
+            return Response({'message': 'Liked'}, status=status.HTTP_200_OK)
+        else:
+            post.likes.add(request.user)
+            post.likes_count += 1
+
+            if post.created_by != request.user:
+                create_notification(request, 'post_liked', post_id=post.id)
+            post.save()
+            return Response({"message": "liked"}, status=status.HTTP_200_OK)
     
 
-@api_view(['POST'])
-def like_post(request, id):
-    post = Post.objects.get(pk=id)
+class CommentPostView(GenericAPIView):
+    queryset = Comment
+    serializer_class = CommentSerializer
+    lookup_url_kwarg=['post_id', 'comment_id']
 
-    if not post.likes.filter(created_by=request.user):
-        like = Like.objects.create(created_by=request.user)
+    def post(self, request, *args, **kwargs):
+        post_id = self.kwargs['postId']
+        body = request.data.get("body")
 
-        post.likes_count = post.likes_count + 1
-        post.likes.add(like)
+        if not body:
+            return Response({"error": "Body text required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        post = get_object_or_404(Post, id=post_id)
+        comment = Comment.objects.create(body=body, created_by=request.user)
+
+        post.comments.add(comment)
+        post.comments_count += 1
         post.save()
-
-        serializer = PostSerializer(post, context={"request":request})
 
         if post.created_by != request.user:
-            create_notification(request, 'post_liked', post_id=id)
+            create_notification(request, "post_commented", post_id=post_id)
+        
+        return Response(status=status.HTTP_201_CREATED)
 
-        return Response(serializer.data)
-    else:
-        like = post.likes.get(created_by=request.user)
-        post.likes_count = post.likes_count - 1
-        post.likes.remove(like)
-        like.delete()
+
+    def delete(self, request, *args, **kwargs):
+        post_id = self.kwargs['postId']
+        comment_id = self.kwargs['commentId']
+        post = get_object_or_404(Post, pk=post_id)
+        if post.created_by == request.user:
+            comment = get_object_or_404(Comment, pk=comment_id)
+        else:
+            comment = get_object_or_404(Comment, created_by=request.user, pk=comment_id)
+
+        post.comments.remove(comment)
+        post.comments_count -= 1
+        comment.delete()
         post.save()
-        serializer = PostSerializer(post, context={"request":request})
-        return Response(serializer.data)
-    
 
-@api_view(['POST'])
-def comment_post(request, id):
-    body = request.data.get("body")
-    if not body:
-        return Response({"error": "Body text required"}, status=status.HTTP_400_BAD_REQUEST)
-    comment = Comment.objects.create(body=body, created_by=request.user)
-
-    post = Post.objects.get(pk=id)
-    post.comments.add(comment)
-    post.comments_count = post.comments_count + 1
-    post.save()
-
-    if post.created_by != request.user:
-        create_notification(request, 'post_commented', post_id=id)
-
-    serializer = CommentSerializer(comment, context={"request":request})
-
-    return Response(serializer.data)
+        return Response({"message": "Comment deleted"}, status=status.HTTP_200_OK)
 
 
-@api_view(['POST'])
-def delete_comment(request, postId, commentId):
-    post = Post.objects.get(pk=postId)
-    
+class SavePostApiView(GenericAPIView):
+    queryset = Post
+    serializer_class = PostSerializer
 
-    if post.created_by == request.user:
-        comment = Comment.objects.get(pk=commentId)
-    else:
-        comment = Comment.objects.get(created_by=request.user, pk=commentId)
-
-    post.comments_count = post.comments_count - 1
-    post.comments.remove(comment)
-    comment.delete()
-    post.save()
-
-    return Response({"message": "Comment deleted"})
-
-
-@api_view(['POST'])
-def save_post(request, id):
-    post = Post.objects.get(pk=id)
-    user = request.user
-    if not user.saved_posts.filter(pk=post.id).exists():
-        user.saved_posts.add(post)
-
-    else:
-        user.saved_posts.remove(post)
-    serializer = PostSerializer(post, context={'request':request})
-    return Response(serializer.data)
-
-    
-@api_view(['GET'])
-def saved_posts(request, username):
-    user = request.user
-    curr_user = UserAccount.objects.get(username=username)
-
-    if user == curr_user:
-        saved_posts_list = user.saved_posts
-        serializer = PostSerializer(saved_posts_list, many=True, context={'request': request})
-
-        return Response(serializer.data)
-    else: 
-        return Response(status=status.HTTP_403_FORBIDDEN)
+    def post(self, request, *args, **kwargs):
+        post_id = self.kwargs['postId']
+        post = get_object_or_404(Post, id=post_id)
+        user = request.user
+        if not user.saved_posts.filter(id=post_id).exists():
+            user.saved_posts.add(post)
+            message = "Post saved"
+        else:
+            user.saved_posts.remove(post)
+            message = "Post removed from saved"
+        
+        return Response({"message": message})
 
 
-@api_view(["GET"])
-def get_popular_post(request):
-    popular_post = PopularPost.objects.get(id=2)
-    if popular_post:
-        serializer = PostSerializer(popular_post.post)
+class RetrieveUserSavedPostsView(GenericAPIView):
+    queryset = Post.objects.all()
+    serializer_class = PostSerializer
 
-        return Response(serializer.data)
-    
-    return Response(status=status.HTTP_404_NOT_FOUND)
+    def get(self, request, *args, **kwargs):
+        username = self.kwargs['username']
+        user_saved_posts = UserAccount.objects.get(username=username)
+
+        if request.user == user_saved_posts:
+            serializer = self.get_serializer(request.user.saved_posts, many=True)
+            return Response(serializer.data)
+        else:
+            return Response(status=status.HTTP_403_FORBIDDEN)
+        
+
+
+class RetrievePopularPost(GenericAPIView):
+    queryset = PopularPost
+    serializer_class = PostSerializer
+
+    def get(self, request, *args, **kwargs):
+        popular_post = PopularPost.objects.last()
+        if popular_post:
+            post = popular_post.post
+            serializer = self.get_serializer(post)
+            return Response(serializer.data)
+        return Response(status=status.HTTP_404_NOT_FOUND)

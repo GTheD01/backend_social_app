@@ -15,8 +15,12 @@ from post.models import Post, PopularPost
 now = timezone.now()
 last_24_hours = now - timedelta(hours=24)
 
-top_post = Post.objects.filter(likes__created_at__gte=last_24_hours).annotate(like_count=Count('likes')).order_by('-like_count').first()
-print(top_post)
+top_post = (
+    Post.objects.filter(created_at__gte=last_24_hours)  # Posts created in the last 24 hours
+    .annotate(like_count=Count('likes'))  # Count the number of likes per post
+    .order_by('-like_count')  # Order by the number of likes (descending)
+    .first()  # Get the post with the most likes
+)
 
 
 if top_post:
