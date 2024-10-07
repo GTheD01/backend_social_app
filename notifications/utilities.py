@@ -1,10 +1,30 @@
 from channels.layers import get_channel_layer
-from asgiref.sync import async_to_sync
+from asgiref.sync import async_to_sync, sync_to_async
 
 from .models import Notification
 from post.models import Post
 from users.models import UserAccount
 
+def create_message_notification(sender, created_for, conversation_id, message_body):
+    channel_layer = get_channel_layer()
+
+    notification_data = {
+        'type': 'new_message',
+        'conversation_id': conversation_id,
+        'body': message_body,
+        'created_by': sender.username,
+        'created_for': created_for,
+    }
+
+    created_for_id = created_for['id']
+
+    async_to_sync(channel_layer.group_send)(
+        f"user_{created_for_id}_notifications",
+        {
+            "type": "send_notification",
+            "notification": notification_data
+        }
+    )
 
 def create_notification(request, notification_type, post_id=None, username=None):
     created_for = None
@@ -34,12 +54,12 @@ def create_notification(request, notification_type, post_id=None, username=None)
     channel_layer = get_channel_layer()
     notifications_count = created_for.received_notifications.filter(is_read=False).count()
 
-
     async_to_sync(channel_layer.group_send)(
         f"user_{created_for.id}_notifications",
         {
             "type": "send_notification",
             'notification': {
+                'type': notification_type,
                 'id': str(notification.id),
                 "post_id": str(post_id),
                 'body': notification.body,

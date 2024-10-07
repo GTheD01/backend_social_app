@@ -35,7 +35,9 @@ class ConversationSerializer(serializers.ModelSerializer):
                 else:
                     value = {"last_message": f"{message.created_by.username}: {message.body}", "seen": message.seen}
                 return value
-        return MessageSerializer(message)
+            
+            return {"last_message": None, 'seen': False}
+        
 
 
     def get_user(self, obj):

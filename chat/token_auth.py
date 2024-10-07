@@ -2,11 +2,13 @@ from django.contrib.auth.models import AnonymousUser
 from channels.db import database_sync_to_async
 from channels.middleware import BaseMiddleware
 
+from django.db import close_old_connections
 from rest_framework_simplejwt.tokens import AccessToken
 from users.models import UserAccount
 
 @database_sync_to_async
 def get_user(token_key):
+    
     try:
         token = AccessToken(token_key)
         user_id = token.payload['user_id']
@@ -19,6 +21,7 @@ class TokenAuthMiddleware(BaseMiddleware):
         self.inner = inner
     
     async def __call__(self, scope, receive, send):
+        close_old_connections()
         headers = dict(scope['headers'])
         # Get the 'cookie' header
         cookie_header = headers.get(b'cookie', b'').decode()  
