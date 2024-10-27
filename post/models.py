@@ -35,6 +35,7 @@ class Post(models.Model):
     body = models.TextField(blank=True, null=True)
     created_by = models.ForeignKey(AUTH_USER_MODEL, related_name='posts',on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
+    shared = models.ForeignKey("self", null=True, blank=True, on_delete=models.SET_NULL)
 
     attachments = models.ManyToManyField(PostAttachment, blank=True)
     comments = models.ManyToManyField(Comment, blank=True)

@@ -52,6 +52,7 @@ class UserAccount(AbstractBaseUser, PermissionsMixin):
 
     saved_posts = models.ManyToManyField(Post, blank=True)
 
+    # TODO: Use PositiveIntegerField
     followers_count = models.IntegerField(default=0)
     following_count = models.IntegerField(default=0)
 

@@ -30,7 +30,6 @@ class PostListCreateView(ListCreateAPIView):
     def perform_create(self, serializer):
         images = self.request.FILES.getlist('image')
         user = self.request.user
-        
         post = serializer.save(created_by=user)
 
         if images:

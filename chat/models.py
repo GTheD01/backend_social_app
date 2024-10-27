@@ -6,9 +6,7 @@ from django.utils import timezone
 from datetime import  timedelta
 
 from social_app_backend.settings import AUTH_USER_MODEL
-from users.models import UserAccount
 
-# Create your models here.
 class Conversation(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, unique=True)
     users = models.ManyToManyField(AUTH_USER_MODEL, related_name="conversations")
