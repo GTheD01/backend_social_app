@@ -19,3 +19,4 @@
 - **Django Channels/Daphne** (WebSockets for real-time messaging)
 - **PostgreSQL** (Database)
 - **Swagger** (API documentation)
+- **Redis**
