@@ -18,13 +18,17 @@ class Comment(models.Model):
         return timesince(self.created_at)
 
 
+def post_attachment_upload_to(instance, filename):
+    return f"post_attachments/{filename}"
+
+
 class PostAttachment(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, unique=True)
-    image = models.ImageField(upload_to="post_attachments")
+    image = models.ImageField(upload_to=post_attachment_upload_to)
     created_by = models.ForeignKey(AUTH_USER_MODEL,related_name="post_attachments", on_delete=models.CASCADE)
 
     def get_image(self):
-        if (self.image):
+        if self.image:
             return settings.WEBSITE_URL +  self.image.url
         else: 
             return ""

@@ -38,7 +38,7 @@ class UserAccountManager(BaseUserManager):
 
 
 def avatar_upload_to(instance, filename):
-    return f"avatars/{instance.username}/{filename}"
+    return f"avatars/{instance.username}/{uuid.uuid4()}/{filename}"
 
 class UserAccount(AbstractBaseUser, PermissionsMixin):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, unique=True)
@@ -52,7 +52,6 @@ class UserAccount(AbstractBaseUser, PermissionsMixin):
 
     saved_posts = models.ManyToManyField(Post, blank=True)
 
-    # TODO: Use PositiveIntegerField
     followers_count = models.IntegerField(default=0)
     following_count = models.IntegerField(default=0)
 

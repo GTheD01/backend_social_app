@@ -84,10 +84,3 @@ class PostSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Body text or at least one image attachment is required.")
         return data
     
-    def create(self, validated_data):
-        attachments_data = validated_data.pop("attachments", [])
-        post = Post.objects.create(**validated_data)
-        for attachment_data in attachments_data:
-            PostAttachment.objects.create(post=post, **attachment_data)
-
-        return post

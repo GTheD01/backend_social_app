@@ -18,14 +18,13 @@ UserAccount = get_user_model()
 
 
 class PostListCreateView(ListCreateAPIView):
-    queryset = Post.objects.all()
     serializer_class = PostSerializer
     pagination_class = PostCursorPagination
 
     def get_queryset(self):
         user = self.request.user
         users = [user] + list(user.following.all())
-        return Post.objects.filter(created_by__in=users)
+        return Post.objects.select_related('created_by').filter(created_by__in=users)
 
     def perform_create(self, serializer):
         images = self.request.FILES.getlist('image')
@@ -44,24 +43,23 @@ class PostListCreateView(ListCreateAPIView):
 
 
 class RetrieveUpdateDeletePostView(RetrieveUpdateDestroyAPIView):
-    queryset = Post
+    queryset = Post.objects.all()
     serializer_class = PostSerializer
     permission_classes = [IsOwnerOrReadOnly]
     lookup_field = 'id'
 
 
 class RetrieveUserPostsView(ListAPIView):
-    queryset = Post.objects.all()
     serializer_class = PostSerializer
 
     def get_queryset(self):
         username = self.kwargs['username']
         user = get_object_or_404(UserAccount, username=username)
-        return Post.objects.filter(created_by=user)
+        return Post.objects.select_related('created_by').filter(created_by=user)
         
 
 class LikePostApiView(GenericAPIView):
-    queryset = Post
+    queryset = Post.objects.select_related('created_by').all()
     serializer_class = PostSerializer
     lookup_field = 'id'
 
@@ -85,7 +83,7 @@ class LikePostApiView(GenericAPIView):
     
 
 class CommentPostView(GenericAPIView):
-    queryset = Comment
+    queryset = Comment.objects.all()
     serializer_class = CommentSerializer
     lookup_url_kwarg=['post_id', 'comment_id']
 
@@ -127,7 +125,7 @@ class CommentPostView(GenericAPIView):
 
 
 class SavePostApiView(GenericAPIView):
-    queryset = Post
+    queryset = Post.objects.all()
     serializer_class = PostSerializer
 
     def post(self, request, *args, **kwargs):
@@ -145,15 +143,19 @@ class SavePostApiView(GenericAPIView):
 
 
 class RetrieveUserSavedPostsView(GenericAPIView):
-    queryset = Post.objects.all()
     serializer_class = PostSerializer
+
+    def get_queryset(self):
+        username = self.kwargs['username']
+        user = get_object_or_404(UserAccount.objects.prefetch_related('saved_posts'), username=username)
+        return user.saved_posts.select_related('created_by')
 
     def get(self, request, *args, **kwargs):
         username = self.kwargs['username']
-        user_saved_posts = UserAccount.objects.get(username=username)
+        queryset = self.get_queryset()
 
-        if request.user == user_saved_posts:
-            serializer = self.get_serializer(request.user.saved_posts, many=True)
+        if request.user.username == username:
+            serializer = self.get_serializer(queryset, many=True)
             return Response(serializer.data)
         else:
             return Response(status=status.HTTP_403_FORBIDDEN)
@@ -161,11 +163,11 @@ class RetrieveUserSavedPostsView(GenericAPIView):
 
 
 class RetrievePopularPost(GenericAPIView):
-    queryset = PopularPost
+    queryset = PopularPost.objects.all().select_related('post')
     serializer_class = PostSerializer
 
     def get(self, request, *args, **kwargs):
-        popular_post = PopularPost.objects.last()
+        popular_post = self.queryset.last()
         if popular_post:
             post = popular_post.post
             serializer = self.get_serializer(post)
